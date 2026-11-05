@@ -1,0 +1,11 @@
+# Archivos locales de Visual Studio
+.vs/
+*.suo
+*.user
+
+# Resultados de compilación
+[Bb]in/
+[Oo]bj/
+
+# Paquetes descargados por NuGet
+packages/
