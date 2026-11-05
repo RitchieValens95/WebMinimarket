@@ -1,0 +1,28 @@
+@model SistemaVentas.Entidades.ResultadoConexion
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Conexión a PostgreSQL - Sistema de ventas</title>
+    <link rel="stylesheet" href="@Url.Content("~/Content/bootstrap.min.css")" />
+</head>
+<body class="bg-light">
+    <main class="container py-5">
+        <h1>Comprobación de conexión</h1>
+        <div class="alert @(Model.Exito ? "alert-success" : "alert-warning")" role="status">
+            @Model.Mensaje
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.VersionServidor))
+        {
+            <h2 class="h5">Versión del servidor</h2>
+            <p>@Model.VersionServidor</p>
+        }
+        <p>La comprobación solo consulta la versión de PostgreSQL. No modifica datos.</p>
+        <a href="@Url.Action("Index", "Inicio")">Volver al inicio</a>
+    </main>
+</body>
+</html>

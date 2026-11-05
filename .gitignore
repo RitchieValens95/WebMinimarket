@@ -9,3 +9,6 @@
 
 # Paquetes descargados por NuGet
 packages/
+
+# Configuración privada de conexión en cada equipo
+/SistemaVentas.Web/AppSettings.Local.config
