@@ -1,7 +1,8 @@
 # Diseño del sistema según los requisitos originales
 
-Estado: propuesta de diseño para revisión. Este documento no crea tablas ni
-declara implementados los módulos comerciales. El alcance íntegro está en
+Estado: diseño aprobado, implementado en los scripts de `database/` y probado en
+PostgreSQL 18.6 temporal; pendiente su aplicación en la base local del usuario.
+Los módulos comerciales se desarrollarán en las etapas siguientes. El alcance íntegro está en
 [requisitos-originales.md](requisitos-originales.md).
 
 ## Etapas y situación actual
@@ -11,7 +12,7 @@ La numeración original del prompt pasa a ser la referencia:
 | Etapa original | Situación |
 | --- | --- |
 | 1. Arquitectura, solución y PostgreSQL | Base existente validada: cuatro proyectos net48, pantalla MVC 5 y conexión con PostgreSQL 18.6. |
-| 2. Tablas, relaciones y datos iniciales | Pendiente; este documento presenta su diseño. |
+| 2. Tablas, relaciones y datos iniciales | Scripts implementados y probados; aplicar y comprobar en Windows siguiendo `database/README.md`. |
 | 3. Inicio de sesión, usuarios, roles y permisos | Pendiente. |
 | 4. Productos, categorías, marcas, clientes y proveedores | Pendiente. |
 | 5. POS | Pendiente. |
@@ -266,7 +267,7 @@ registro reside en la base y el servidor.
 - Excel y PDF se incorporarán en la etapa 8 seleccionando bibliotecas compatibles
   con net48 y licencia apropiada. No son dependencias necesarias para crear el esquema.
 
-## Scripts y datos iniciales previstos para la etapa 2
+## Scripts y datos iniciales de la etapa 2
 
 ```text
 database/001_estructura.sql           Tablas, secuencias, FK, restricciones e índices
@@ -283,6 +284,17 @@ versión aplicada exige una nueva migración en lugar de ocultar la diferencia.
 El usuario administrador de la aplicación se creará de forma segura en la etapa 3,
 solicitando una contraseña local y generando el hash. No habrá una contraseña
 predeterminada compartida en SQL, documentación o GitHub.
+
+Los campos `ventas.solicitud_hash` y `compras.solicitud_hash` conservan la firma
+del contenido de la solicitud junto a su UUID de idempotencia. `pagos.es_efectivo`
+conserva una copia del comportamiento del método para mantener el historial si
+se modifica el catálogo. Los historiales son inmutables y los documentos se
+confirman solo después de registrar todos sus efectos en la misma transacción.
+
+Las comprobaciones diferidas validan al COMMIT tanto el documento completo como
+la coincidencia entre stock y movimientos. La lógica de permisos, cálculo de
+precios y respuesta a reintentos se implementará en los servicios de sus módulos.
+Las instrucciones y límites de los scripts están en [database/README.md](../database/README.md).
 
 Las restricciones SQL se probarán con datos válidos e inválidos dentro de
 transacciones que después se reviertan. Se verificarán FK, unicidad, cantidades,
