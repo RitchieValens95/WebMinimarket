@@ -1,0 +1,24 @@
+﻿@model SistemaVentas.Web.ViewModels.RolFormulario
+@using System.Linq
+@{ ViewBag.Title = Model.Id == 0 ? "Nuevo rol" : "Editar rol"; }
+<h1 class="h3 mb-3">@ViewBag.Title</h1>
+@using (Html.BeginForm("Guardar", "Roles", FormMethod.Post, new { @class = "card card-body border-0 shadow-sm formulario-administracion" })) {
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m => m.Id)
+@Html.ValidationSummary(false, "", new { @class = "text-danger", role = "alert" })
+<div class="mb-3">@Html.LabelFor(m => m.Codigo, new { @class = "form-label" })
+@if (Model.Id == 0) { @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", maxlength = "40", required = "required" }) }
+else { @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", @readonly = "readonly" }) }
+<div class="form-text">Usa mayúsculas y guiones bajos. El código se conserva después de crear el rol.</div></div>
+<div class="mb-3">@Html.LabelFor(m => m.Nombre, new { @class = "form-label" }) @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "80", required = "required" })</div>
+<div class="form-check mb-3">@Html.CheckBoxFor(m => m.Activo, new { @class = "form-check-input" }) @Html.LabelFor(m => m.Activo, new { @class = "form-check-label" })</div>
+foreach (var grupo in Model.PermisosDisponibles.GroupBy(p => p.Modulo)) {
+<fieldset class="border rounded p-3 mb-3"><legend class="float-none w-auto px-2 fs-6">@grupo.Key</legend>
+@foreach (var permiso in grupo) {
+<div class="form-check"><input class="form-check-input" type="checkbox" name="PermisoIds" value="@permiso.Id" id="permiso-@permiso.Id" checked="@((Model.PermisoIds ?? new long[0]).Contains(permiso.Id))" />
+<label class="form-check-label" for="permiso-@permiso.Id">@permiso.Descripcion <span class="text-secondary small">(@permiso.Codigo)</span></label></div>
+}
+</fieldset>
+}
+<div class="d-flex gap-2"><button class="btn btn-primary" type="submit">Guardar rol</button><a class="btn btn-outline-secondary" href="@Url.Action("Index")" onclick="return confirm('¿Cancelar la edición sin guardar?');">Cancelar</a></div>
+}

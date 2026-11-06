@@ -360,4 +360,24 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
   </Target>
+  <ItemGroup>
+    <Compile Include="Controllers\AccesoController.cs" />
+    <Compile Include="Controllers\RolesController.cs" />
+    <Compile Include="Controllers\UsuariosController.cs" />
+    <Compile Include="Seguridad\Aplicacion.cs" />
+    <Compile Include="Seguridad\AutorizarSesionAttribute.cs" />
+    <Compile Include="Seguridad\ErroresSegurosAttribute.cs" />
+    <Compile Include="Seguridad\HoraParaguay.cs" />
+    <Compile Include="Seguridad\LimiteAccesos.cs" />
+    <Compile Include="Seguridad\SeguridadWeb.cs" />
+    <Compile Include="ViewModels\SeguridadModelos.cs" />
+    <Content Include="Views\Acceso\Ingresar.cshtml" />
+    <Content Include="Views\Roles\Formulario.cshtml" />
+    <Content Include="Views\Roles\Index.cshtml" />
+    <Content Include="Views\Shared\_Layout.cshtml" />
+    <Content Include="Views\Usuarios\Formulario.cshtml" />
+    <Content Include="Views\Usuarios\Index.cshtml" />
+    <Content Include="Views\_ViewStart.cshtml" />
+    <Content Include="Content\Aplicacion.css" />
+  </ItemGroup>
 </Project>

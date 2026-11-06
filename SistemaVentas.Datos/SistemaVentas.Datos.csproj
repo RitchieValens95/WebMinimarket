@@ -92,4 +92,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="RepositorioSeguridad.cs" />
+  </ItemGroup>
 </Project>

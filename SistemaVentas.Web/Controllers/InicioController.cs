@@ -1,6 +1,7 @@
 using System.Configuration;
 using System.Web.Mvc;
 using SistemaVentas.Negocio;
+using SistemaVentas.Web.Seguridad;
 
 namespace SistemaVentas.Web.Controllers
 {
@@ -10,10 +11,10 @@ namespace SistemaVentas.Web.Controllers
         public ActionResult Index()
         {
             // Por convención, MVC busca Views/Inicio/Index.cshtml.
-            return View();
+            return View(SeguridadWeb.Usuario(HttpContext));
         }
 
-        [HttpGet]
+        [HttpGet, Permiso("USUARIOS_ADMINISTRAR")]
         [OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
         public ActionResult Conexion()
         {

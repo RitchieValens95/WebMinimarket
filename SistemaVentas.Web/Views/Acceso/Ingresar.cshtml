@@ -1,0 +1,20 @@
+﻿@model SistemaVentas.Web.ViewModels.IngresoModelo
+@{ Layout = null; }
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Iniciar sesión - Sistema de ventas</title>
+<link rel="stylesheet" href="@Url.Content("~/Content/bootstrap.min.css")" />
+</head><body class="bg-light"><main class="container py-5"><div class="row justify-content-center"><div class="col-12 col-md-7 col-lg-5"><div class="card border-0 shadow-sm"><div class="card-body p-4">
+<p class="text-secondary mb-1">Sistema de ventas</p><h1 class="h3 mb-4">Iniciar sesión</h1>
+@using (Html.BeginForm("Ingresar", "Acceso", FormMethod.Post)) {
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m => m.ReturnUrl)
+@Html.ValidationSummary(false, "", new { @class = "text-danger", role = "alert" })
+<div class="mb-3">@Html.LabelFor(m => m.Usuario, new { @class = "form-label" })
+@Html.TextBoxFor(m => m.Usuario, new { @class = "form-control", autocomplete = "username", maxlength = "80", required = "required", autofocus = "autofocus" })</div>
+<div class="mb-4">@Html.LabelFor(m => m.Password, new { @class = "form-label" })
+@Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "current-password", maxlength = "128", required = "required" })</div>
+<button class="btn btn-primary w-100" type="submit">Ingresar</button>
+}
+<p class="text-secondary small mt-3 mb-0">Solicita tu cuenta al administrador del comercio.</p>
+</div></div></div></div></main></body></html>

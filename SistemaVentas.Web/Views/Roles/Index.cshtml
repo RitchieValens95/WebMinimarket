@@ -1,0 +1,17 @@
+﻿@model SistemaVentas.Web.ViewModels.RolesListado
+@{ ViewBag.Title = "Roles y permisos"; }
+<div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h3 mb-0">Roles y permisos</h1><a class="btn btn-primary" href="@Url.Action("Crear")">Nuevo rol</a></div>
+@using (Html.BeginForm("Index", "Roles", FormMethod.Get, new { @class = "d-flex gap-2 mb-3" })) {
+<label for="busqueda" class="visually-hidden">Buscar rol</label>
+<input class="form-control" id="busqueda" name="busqueda" value="@Model.Busqueda" maxlength="100" placeholder="Buscar por código o nombre" />
+<button class="btn btn-outline-primary" type="submit">Buscar</button>
+}
+<div class="table-responsive bg-white rounded border"><table class="table align-middle mb-0"><thead><tr><th>Código</th><th>Nombre</th><th>Estado</th><th>Permisos</th><th>Acciones</th></tr></thead><tbody>
+@foreach (var rol in Model.Roles) {
+<tr><td>@rol.Codigo</td><td>@rol.Nombre</td><td>@(rol.Activo ? "Activo" : "Inactivo")</td><td>@rol.PermisoIds.Count</td><td><a class="btn btn-sm btn-outline-primary" href="@Url.Action("Editar", new { id = rol.Id })">Editar permisos</a></td></tr>
+}
+</tbody></table></div>
+<nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Paginación de roles"><span>@Model.Total roles · Página @Model.Pagina</span><div>
+@if (Model.Pagina > 1) { <a class="btn btn-outline-secondary" href="@Url.Action("Index", new { pagina = Model.Pagina - 1, busqueda = Model.Busqueda })">Anterior</a> }
+@if (Model.Pagina * 20 < Model.Total) { <a class="btn btn-outline-secondary" href="@Url.Action("Index", new { pagina = Model.Pagina + 1, busqueda = Model.Busqueda })">Siguiente</a> }
+</div></nav>

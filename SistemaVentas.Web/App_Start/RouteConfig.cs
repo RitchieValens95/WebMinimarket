@@ -10,6 +10,10 @@ namespace SistemaVentas.Web
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
+            routes.MapRoute("Acceso", "Acceso/{action}", new { controller = "Acceso", action = "Ingresar" });
+            routes.MapRoute("Usuarios", "Usuarios/{action}/{id}", new { controller = "Usuarios", action = "Index", id = UrlParameter.Optional });
+            routes.MapRoute("Roles", "Roles/{action}/{id}", new { controller = "Roles", action = "Index", id = UrlParameter.Optional });
+
             // MVC atiende el inicio antes de que FriendlyUrls busque una página .aspx.
             routes.MapRoute(
                 name: "InicioMvc",

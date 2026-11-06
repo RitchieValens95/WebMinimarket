@@ -1,0 +1,3 @@
+@media (min-width: 992px) { .menu-aplicacion { min-height: calc(100vh - 56px); } }
+.formulario-administracion { max-width: 960px; }
+.validation-summary-valid { display: none; }

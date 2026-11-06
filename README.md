@@ -12,11 +12,12 @@ con ADO.NET/Npgsql.
 - [Pantalla inicial MVC y ejecución en Visual Studio](docs/etapa-1-mvc.md).
 - [Preparación de la conexión local con PostgreSQL](docs/etapa-2-postgresql.md).
 - [Etapa 2 original: crear y comprobar tablas y datos iniciales](database/README.md).
+- [Etapa 3: acceso, usuarios, roles y permisos](docs/etapa-3-seguridad.md).
 
-La base técnica y la conexión se validaron en Windows con IIS Express. Los scripts
-de estructura se probaron en PostgreSQL 18.6 temporal y están disponibles para
-aplicarlos en la base local. Los módulos de acceso, catálogo, POS, compras, caja
-y reportes se implementarán por etapas según los requisitos.
+La base técnica, la conexión y el esquema de la etapa 2 se validaron en Windows.
+La etapa 3 incorpora acceso y administración de usuarios/roles, con pruebas en
+PostgreSQL temporal y pendiente de validación final bajo IIS Express. El catálogo,
+POS, compras, caja y reportes siguen las etapas siguientes de los requisitos.
 
 La ejecución de la aplicación requiere Windows y las herramientas de desarrollo
 de .NET Framework 4.8. El SDK de .NET moderno no sustituye ese entorno. La

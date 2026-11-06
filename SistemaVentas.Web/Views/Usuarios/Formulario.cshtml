@@ -1,0 +1,25 @@
+﻿@model SistemaVentas.Web.ViewModels.UsuarioFormulario
+@using System.Linq
+@{ ViewBag.Title = Model.Id == 0 ? "Nuevo usuario" : "Editar usuario"; }
+<h1 class="h3 mb-3">@ViewBag.Title</h1>
+@using (Html.BeginForm("Guardar", "Usuarios", FormMethod.Post, new { @class = "card card-body border-0 shadow-sm formulario-administracion" })) {
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m => m.Id)
+@Html.ValidationSummary(false, "", new { @class = "text-danger", role = "alert" })
+<div class="row"><div class="col-md-6 mb-3">@Html.LabelFor(m => m.NombreUsuario, new { @class = "form-label" })
+@Html.TextBoxFor(m => m.NombreUsuario, new { @class = "form-control", maxlength = "80", required = "required", autocomplete = "off" })</div>
+<div class="col-md-6 mb-3">@Html.LabelFor(m => m.Nombre, new { @class = "form-label" })
+@Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "150", required = "required" })</div></div>
+<div class="mb-3">@Html.LabelFor(m => m.Correo, new { @class = "form-label" }) @Html.TextBoxFor(m => m.Correo, new { @class = "form-control", type = "email", maxlength = "254" })</div>
+<div class="row"><div class="col-md-6 mb-3">@Html.LabelFor(m => m.Password, new { @class = "form-label" }) @Html.PasswordFor(m => m.Password, new { @class = "form-control", minlength = "12", maxlength = "128", autocomplete = "new-password" })</div>
+<div class="col-md-6 mb-3">@Html.LabelFor(m => m.Confirmacion, new { @class = "form-label" }) @Html.PasswordFor(m => m.Confirmacion, new { @class = "form-control", minlength = "12", maxlength = "128", autocomplete = "new-password" })</div></div>
+<p class="form-text">Usa entre 12 y 128 caracteres. Al editar, deja ambas contraseñas vacías para conservar la actual.</p>
+<fieldset class="border rounded p-3 mb-3"><legend class="float-none w-auto px-2 fs-6">Roles</legend>
+@foreach (var rol in Model.RolesDisponibles) {
+<div class="form-check"><input class="form-check-input" type="checkbox" name="RolIds" value="@rol.Id" id="rol-@rol.Id" checked="@((Model.RolIds ?? new long[0]).Contains(rol.Id))" />
+<label class="form-check-label" for="rol-@rol.Id">@rol.Nombre @(!rol.Activo ? "(inactivo; selecciona un rol activo)" : "")</label></div>
+}
+</fieldset>
+<div class="form-check mb-3">@Html.CheckBoxFor(m => m.Activo, new { @class = "form-check-input" }) @Html.LabelFor(m => m.Activo, new { @class = "form-check-label" })</div>
+<div class="d-flex gap-2"><button class="btn btn-primary" type="submit">Guardar usuario</button><a class="btn btn-outline-secondary" href="@Url.Action("Index")" onclick="return confirm('¿Cancelar la edición sin guardar?');">Cancelar</a></div>
+}

@@ -13,6 +13,16 @@ namespace SistemaVentas.Datos
             this.cadenaConexion = cadenaConexion;
         }
 
+        internal static NpgsqlConnection Abrir(string cadena)
+        {
+            if (string.IsNullOrWhiteSpace(cadena))
+                throw new ArgumentException("Falta configurar la conexión local a PostgreSQL.");
+            var configuracion = new NpgsqlConnectionStringBuilder(cadena) { Timeout = 5, CommandTimeout = 10 };
+            var conexion = new NpgsqlConnection(configuracion.ConnectionString);
+            try { conexion.Open(); return conexion; }
+            catch { conexion.Dispose(); throw; }
+        }
+
         public ResultadoConexion Comprobar()
         {
             if (string.IsNullOrWhiteSpace(cadenaConexion))

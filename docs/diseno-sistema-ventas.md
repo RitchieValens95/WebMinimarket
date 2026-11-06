@@ -1,7 +1,8 @@
 # Diseño del sistema según los requisitos originales
 
-Estado: diseño aprobado, implementado en los scripts de `database/` y probado en
-PostgreSQL 18.6 temporal; pendiente su aplicación en la base local del usuario.
+Estado: diseño aprobado, esquema de la etapa 2 validado en PostgreSQL 18.6 de
+Windows. La etapa 3 incorpora la migración 004 y la seguridad de aplicación;
+su validación final en Windows queda pendiente.
 Los módulos comerciales se desarrollarán en las etapas siguientes. El alcance íntegro está en
 [requisitos-originales.md](requisitos-originales.md).
 
@@ -12,8 +13,8 @@ La numeración original del prompt pasa a ser la referencia:
 | Etapa original | Situación |
 | --- | --- |
 | 1. Arquitectura, solución y PostgreSQL | Base existente validada: cuatro proyectos net48, pantalla MVC 5 y conexión con PostgreSQL 18.6. |
-| 2. Tablas, relaciones y datos iniciales | Scripts implementados y probados; aplicar y comprobar en Windows siguiendo `database/README.md`. |
-| 3. Inicio de sesión, usuarios, roles y permisos | Pendiente. |
+| 2. Tablas, relaciones y datos iniciales | Validada por el usuario en PostgreSQL 18.6 de Windows. |
+| 3. Inicio de sesión, usuarios, roles y permisos | Implementada localmente; pruebas de servicios/filtros y Razor realizadas; pendiente Windows/IIS. |
 | 4. Productos, categorías, marcas, clientes y proveedores | Pendiente. |
 | 5. POS | Pendiente. |
 | 6. Compras y stock | Pendiente. |

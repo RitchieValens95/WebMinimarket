@@ -1,0 +1,35 @@
+﻿@model SistemaVentas.Entidades.PaginaUsuarios
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title = "Usuarios"; var puedeEditar = SeguridadWeb.Usuario(Context).Puede("USUARIOS_ADMINISTRAR"); }
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"><h1 class="h3 mb-0">Usuarios</h1>
+@if (puedeEditar) { <a class="btn btn-primary" href="@Url.Action("Crear")">Nuevo usuario</a> }
+</div>
+@using (Html.BeginForm("Index", "Usuarios", FormMethod.Get, new { @class = "d-flex gap-2 mb-3" })) {
+<label for="busqueda" class="visually-hidden">Buscar usuario o nombre</label>
+<input id="busqueda" name="busqueda" value="@Model.Busqueda" class="form-control" maxlength="100" placeholder="Buscar por usuario o nombre" />
+<button class="btn btn-outline-primary" type="submit">Buscar</button>
+}
+<div class="table-responsive bg-white rounded border"><table class="table table-hover align-middle mb-0">
+<thead><tr><th>Usuario</th><th>Nombre</th><th>Roles</th><th>Estado</th><th>Último acceso</th><th>Acciones</th></tr></thead><tbody>
+@foreach (var usuario in Model.Usuarios) {
+<tr><td>@usuario.NombreUsuario</td><td>@usuario.Nombre</td><td>@usuario.Roles</td>
+<td><span class="badge @(usuario.Activo ? "bg-success" : "bg-secondary")">@(usuario.Activo ? "Activo" : "Inactivo")</span></td>
+<td>@HoraParaguay.Mostrar(usuario.UltimoAcceso)</td><td>
+@if (puedeEditar) {
+<a class="btn btn-sm btn-outline-primary" href="@Url.Action("Editar", new { id = usuario.Id })">Editar</a>
+if (usuario.Activo) {
+using (Html.BeginForm("Desactivar", "Usuarios", FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('¿Desactivar este usuario y cerrar sus sesiones?');" })) {
+@Html.AntiForgeryToken()
+<input type="hidden" name="id" value="@usuario.Id" />
+<button class="btn btn-sm btn-outline-danger" type="submit">Desactivar</button>
+}
+}
+}
+</td></tr>
+}
+@if (Model.Usuarios.Count == 0) { <tr><td colspan="6" class="text-center text-secondary py-4">No se encontraron usuarios.</td></tr> }
+</tbody></table></div>
+<nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Paginación de usuarios"><span>@Model.Total usuarios · Página @Model.Pagina</span><div>
+@if (Model.Pagina > 1) { <a class="btn btn-outline-secondary" href="@Url.Action("Index", new { pagina = Model.Pagina - 1, busqueda = Model.Busqueda })">Anterior</a> }
+@if ((long)Model.Pagina * Model.Tamano < Model.Total) { <a class="btn btn-outline-secondary" href="@Url.Action("Index", new { pagina = Model.Pagina + 1, busqueda = Model.Busqueda })">Siguiente</a> }
+</div></nav>

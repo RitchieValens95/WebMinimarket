@@ -56,4 +56,8 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="Contrasenas.cs" />
+    <Compile Include="ServicioSeguridad.cs" />
+  </ItemGroup>
 </Project>

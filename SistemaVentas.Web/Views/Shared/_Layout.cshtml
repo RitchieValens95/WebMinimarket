@@ -1,0 +1,36 @@
+﻿@using SistemaVentas.Web.Seguridad
+@{ var actual = SeguridadWeb.Usuario(Context); }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>@ViewBag.Title - Sistema de ventas</title>
+<link rel="stylesheet" href="@Url.Content("~/Content/bootstrap.min.css")" />
+<link rel="stylesheet" href="@Url.Content("~/Content/Aplicacion.css")" />
+</head>
+<body class="bg-light">
+<header class="navbar navbar-dark bg-dark px-3">
+<a class="navbar-brand" href="@Url.Action("Index", "Inicio")">Sistema de ventas</a>
+<button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Abrir menú"><span class="navbar-toggler-icon"></span></button>
+<span class="text-white small d-none d-lg-inline">@actual.Nombre</span>
+</header>
+<div class="container-fluid"><div class="row">
+<aside id="menu" class="col-lg-3 col-xl-2 collapse d-lg-block bg-white border-end py-3 menu-aplicacion">
+<nav class="list-group list-group-flush" aria-label="Menú principal">
+<a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Inicio")">Inicio</a>
+@if (actual.Puede("USUARIOS_VER")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Usuarios")">Usuarios</a> }
+@if (actual.Puede("ROLES_ADMINISTRAR")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Roles")">Roles y permisos</a> }
+</nav>
+<div class="px-3 mt-4">
+@using (Html.BeginForm("Salir", "Acceso", FormMethod.Post)) {
+@Html.AntiForgeryToken()
+<button class="btn btn-outline-secondary w-100" type="submit">Cerrar sesión</button>
+}
+</div></aside>
+<main class="col-lg-9 col-xl-10 p-3 p-lg-4">
+@if (TempData["Exito"] != null) { <div class="alert alert-success" role="status">@TempData["Exito"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger" role="alert">@TempData["Error"]</div> }
+@RenderBody()
+</main></div></div>
+<script src="@Url.Content("~/Scripts/bootstrap.bundle.min.js")"></script>
+</body></html>

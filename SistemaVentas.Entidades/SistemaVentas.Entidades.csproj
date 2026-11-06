@@ -52,4 +52,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
- </Project>
+   <ItemGroup>
+    <Compile Include="Seguridad.cs" />
+  </ItemGroup>
+</Project>

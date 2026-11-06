@@ -1,5 +1,9 @@
 # Etapa 2 original: estructura de PostgreSQL
 
+La etapa 2 ya fue validada en Windows. Si continúas con acceso y usuarios,
+consulta [etapa 3](../docs/etapa-3-seguridad.md): solo requiere la nueva migración
+004 sobre la base existente, no repetir las migraciones iniciales.
+
 Estos scripts implementan la base del sistema del prompt original. Se mantienen
 los cuatro proyectos de Visual Studio, .NET Framework 4.8 y MVC 5.
 Se crean las tablas y restricciones que utilizarán los módulos posteriores;

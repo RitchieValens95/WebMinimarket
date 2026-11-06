@@ -40,7 +40,7 @@ BEGIN
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.usuarios'::regclass AND contype='f';
     IF cantidad <> 0 THEN RAISE EXCEPTION 'Cantidad de restricciones f inesperada en usuarios.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.usuarios'::regclass AND contype='c';
-    IF cantidad <> 3 THEN RAISE EXCEPTION 'Cantidad de restricciones c inesperada en usuarios.'; END IF;
+    IF cantidad <> (CASE WHEN EXISTS (SELECT 1 FROM public.esquema_versiones WHERE version='004') THEN 5 ELSE 3 END) THEN RAISE EXCEPTION 'Cantidad de restricciones c inesperada en usuarios.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.usuarios'::regclass AND contype='u';
     IF cantidad <> 0 THEN RAISE EXCEPTION 'Cantidad de restricciones u inesperada en usuarios.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.roles'::regclass AND contype='p';
