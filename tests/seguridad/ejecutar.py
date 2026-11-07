@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--dotnet", required=True, help="Ejecutable dotnet del SDK usado para Roslyn")
     parser.add_argument("--referencias", required=True, type=Path, help="Directorio de referencias oficiales .NET Framework 4.8")
     parser.add_argument("--solo-vistas", action="store_true", help="Compilar y comprobar Razor sin crear una base temporal")
+    parser.add_argument("--catalogos", action="store_true", help="Comprobar etapa 4.1 sobre una base temporal independiente")
     args = parser.parse_args()
     sdk = subprocess.check_output([args.dotnet, "--list-sdks"], text=True).splitlines()[-1]
     version, location = sdk.split(" ", 1)
@@ -76,6 +77,8 @@ def main():
         references = framework + list(runtime.glob("*.dll"))
         for source in ("SeguridadPruebas", "RazorPruebas"):
             compile_csharp([ROOT / "tests/seguridad" / (source + ".cs")], references, runtime / (source + ".exe"), exe=True)
+        if args.catalogos:
+            compile_csharp([ROOT / "tests/catalogos/CatalogosPruebas.cs"], references, runtime / "CatalogosPruebas.exe", exe=True)
         compile_csharp([ROOT / "tools/AdministradorInicial.cs"], references, runtime / "AdministradorInicial.exe", exe=True, language="5")
         # Solo algoritmos/redirecciones de la aplicación; no se copian secretos reales.
         web = (ROOT / "SistemaVentas.Web/Web.config").read_text(encoding="utf-8-sig")
@@ -126,6 +129,31 @@ def main():
             result = sql(changed, required=False)
             if result.returncode == 0 or "Checksum diferente" not in result.stderr:
                 raise RuntimeError("No se detectó el cambio de checksum de 004")
+            if args.catalogos:
+                # Una base anterior puede contener relaciones hoy incompatibles.
+                # La migración debe rechazarlas sin repararlas ni dejar DDL parcial.
+                sql("INSERT INTO categorias(nombre,activo) VALUES ('Preflight inactiva',false); "
+                    "INSERT INTO productos(codigo,descripcion,categoria_id,unidad_medida_id) "
+                    "SELECT 'PREFLIGHT','Preflight',c.id,u.id FROM categorias c CROSS JOIN unidades_medida u "
+                    "WHERE c.nombre='Preflight inactiva' AND u.codigo='UN';")
+                migration = (ROOT / "database/006_catalogos.sql").read_text(encoding="utf-8-sig")
+                result = sql(migration, required=False)
+                if result.returncode == 0 or "Hay productos activos" not in result.stderr:
+                    raise RuntimeError("006 no rechazó la relación previa incompatible")
+                state = sql("SELECT (SELECT count(*) FROM esquema_versiones WHERE version='006'), "
+                            "(SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='productos' AND column_name='requiere_catalogos_activos'), "
+                            "(SELECT count(*) FROM productos WHERE codigo='PREFLIGHT');").stdout.strip()
+                if state != "0|0|1":
+                    raise RuntimeError("006 no revirtió completamente o modificó datos existentes")
+                sql("DELETE FROM productos WHERE codigo='PREFLIGHT'; DELETE FROM categorias WHERE nombre='Preflight inactiva';")
+                print("OK SQL: 006 rechaza relaciones incompatibles y revierte sin cambiar datos.", flush=True)
+                for filename in ("006_catalogos.sql", "006_catalogos.sql", "007_comprobar_catalogos.sql", "003_comprobar_estructura.sql"):
+                    sql((ROOT / "database" / filename).read_text(encoding="utf-8-sig"))
+                    print("OK SQL", filename, flush=True)
+                changed = (ROOT / "database/006_catalogos.sql").read_text(encoding="utf-8-sig").replace("-- Los productos", "-- cambio de prueba\n-- Los productos", 1)
+                result = sql(changed, required=False)
+                if result.returncode == 0 or "Checksum diferente" not in result.stderr:
+                    raise RuntimeError("No se detectó el cambio de checksum de 006")
             connection = work / "cliente.env"
             connection.write_text("SV_TEST_CONNECTION=Host=127.0.0.1;Port=5432;Database=seguridad;Username=sistemaventas_app;Password=" + credential + "\n")
             connection.chmod(0o600)
@@ -137,8 +165,11 @@ def main():
                 print(result.stdout, flush=True)
                 if result.returncode:
                     raise RuntimeError(result.stderr)
-            mono("SeguridadPruebas.exe")
+            mono("CatalogosPruebas.exe" if args.catalogos else "SeguridadPruebas.exe")
             sql((ROOT / "database/005_comprobar_seguridad.sql").read_text(encoding="utf-8-sig"))
+            if args.catalogos:
+                sql((ROOT / "database/007_comprobar_catalogos.sql").read_text(encoding="utf-8-sig"))
+                sql((ROOT / "database/003_comprobar_estructura.sql").read_text(encoding="utf-8-sig"))
         finally:
             if started:
                 result = docker("rm", "-f", name)

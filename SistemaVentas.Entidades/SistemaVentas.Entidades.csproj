@@ -55,4 +55,9 @@
    <ItemGroup>
     <Compile Include="Seguridad.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Categoria.cs" />
+    <Compile Include="Marca.cs" />
+    <Compile Include="RegistroCatalogo.cs" />
+  </ItemGroup>
 </Project>

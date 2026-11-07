@@ -1,0 +1,43 @@
+﻿@model SistemaVentas.Web.ViewModels.CatalogoListado
+@{
+    ViewBag.Title = ViewBag.Catalogo;
+    string controlador = ViewBag.Controlador;
+    var datos = Model.Datos;
+    long paginas = Math.Max(1, (datos.Total + datos.Tamano - 1) / datos.Tamano);
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h1 class="h2">@ViewBag.Catalogo</h1>
+<a class="btn btn-primary" href="@Url.Action("Crear", controlador)">Crear registro</a>
+</div>
+@using (Html.BeginForm("Index", controlador, FormMethod.Get, new { @class = "row g-2 mb-3" })) {
+<div class="col-md-6"><label class="form-label" for="busqueda">Buscar por nombre</label>
+<input class="form-control" id="busqueda" name="busqueda" value="@datos.Busqueda" maxlength="100" /></div>
+<div class="col-md-3"><label class="form-label" for="estado">Estado</label>
+@Html.DropDownList("estado", new SelectList(new[] {
+    new { Valor = "todos", Texto = "Todos" }, new { Valor = "activos", Texto = "Activos" }, new { Valor = "inactivos", Texto = "Inactivos" }
+}, "Valor", "Texto", datos.Estado), new { @class = "form-select" })</div>
+<div class="col-md-3 d-flex align-items-end"><button class="btn btn-outline-primary" type="submit">Buscar</button></div>
+}
+<p>@datos.Total registro(s) encontrado(s).</p>
+<div class="table-responsive"><table class="table table-striped align-middle">
+<thead><tr><th scope="col">Nombre</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
+<tbody>
+@foreach (var registro in datos.Registros) {
+<tr><td>@registro.Nombre</td><td>@(registro.Activo ? "Activo" : "Inactivo")</td><td>
+<a class="btn btn-sm btn-outline-primary" href="@Url.Action("Editar", controlador, new { id = registro.Id })">Editar</a>
+@if (registro.Activo) {
+using (Html.BeginForm("Desactivar", controlador, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('¿Desactivar este registro?');" })) {
+@Html.AntiForgeryToken()
+<input type="hidden" name="id" value="@registro.Id" /><input type="hidden" name="version" value="@registro.Version" />
+<button class="btn btn-sm btn-outline-danger" type="submit">Desactivar</button>
+}
+}
+</td></tr>
+}
+@if (datos.Registros.Count == 0) { <tr><td colspan="3">No hay registros para esta búsqueda.</td></tr> }
+</tbody></table></div>
+<nav class="d-flex align-items-center gap-3" aria-label="Paginación">
+@if (datos.Pagina > 1) { <a href="@Url.Action("Index", controlador, new { pagina = datos.Pagina - 1, busqueda = datos.Busqueda, estado = datos.Estado })">Anterior</a> }
+<span>Página @datos.Pagina de @paginas</span>
+@if (datos.Pagina < paginas) { <a href="@Url.Action("Index", controlador, new { pagina = datos.Pagina + 1, busqueda = datos.Busqueda, estado = datos.Estado })">Siguiente</a> }
+</nav>

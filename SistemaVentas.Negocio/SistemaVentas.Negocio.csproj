@@ -60,4 +60,9 @@
     <Compile Include="Contrasenas.cs" />
     <Compile Include="ServicioSeguridad.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ServicioCatalogo.cs" />
+    <Compile Include="ServicioCategorias.cs" />
+    <Compile Include="ServicioMarcas.cs" />
+  </ItemGroup>
 </Project>

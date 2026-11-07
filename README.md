@@ -13,11 +13,13 @@ con ADO.NET/Npgsql.
 - [Preparación de la conexión local con PostgreSQL](docs/etapa-2-postgresql.md).
 - [Etapa 2 original: crear y comprobar tablas y datos iniciales](database/README.md).
 - [Etapa 3: acceso, usuarios, roles y permisos](docs/etapa-3-seguridad.md).
+- [Etapa 4.1: categorías y marcas](docs/etapa-4-1-catalogos.md).
 
 La base técnica, la conexión y el esquema de la etapa 2 se validaron en Windows.
-La etapa 3 incorpora acceso y administración de usuarios/roles, con pruebas en
-PostgreSQL temporal y pendiente de validación final bajo IIS Express. El catálogo,
-POS, compras, caja y reportes siguen las etapas siguientes de los requisitos.
+El acceso como administrador de la etapa 3 se comprobó en Windows. La etapa
+4.1 incorpora categorías y marcas, con pruebas sobre PostgreSQL temporal y
+pendiente del recorrido funcional bajo IIS Express. Productos, clientes,
+proveedores, POS, compras, caja y reportes siguen las siguientes entregas.
 
 La ejecución de la aplicación requiere Windows y las herramientas de desarrollo
 de .NET Framework 4.8. El SDK de .NET moderno no sustituye ese entorno. La

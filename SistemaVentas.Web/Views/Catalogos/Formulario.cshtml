@@ -1,0 +1,21 @@
+﻿@model SistemaVentas.Web.ViewModels.CatalogoFormulario
+@{
+    ViewBag.Title = (Model.Id == 0 ? "Crear" : "Editar") + " - " + ViewBag.Catalogo;
+    string controlador = ViewBag.Controlador;
+}
+<h1 class="h2">@ViewBag.Title</h1>
+@using (Html.BeginForm("Guardar", controlador, FormMethod.Post, new { @class = "col-lg-7" })) {
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m => m.Id)
+@Html.HiddenFor(m => m.Version)
+@Html.ValidationSummary(false, "", new { @class = "text-danger", role = "alert" })
+<div class="mb-3">@Html.LabelFor(m => m.Nombre, new { @class = "form-label" })
+@Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "100", required = "required", autocomplete = "off" })
+@Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger" })</div>
+<div class="form-check mb-3">@Html.CheckBoxFor(m => m.Activo, new { @class = "form-check-input" })
+@Html.LabelFor(m => m.Activo, new { @class = "form-check-label" })</div>
+<p class="text-muted">Los nombres no se pueden repetir, incluso entre registros inactivos. Para reactivar un registro, marca Activo y guarda.</p>
+<p class="text-muted">Para desactivarlo, sus productos activos deben reasignarse o desactivarse primero.</p>
+<button class="btn btn-primary" type="submit">Guardar</button>
+<a class="btn btn-outline-secondary" href="@Url.Action("Index", controlador)">Volver al listado</a>
+}

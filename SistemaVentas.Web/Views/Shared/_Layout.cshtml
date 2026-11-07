@@ -20,6 +20,8 @@
 <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Inicio")">Inicio</a>
 @if (actual.Puede("USUARIOS_VER")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Usuarios")">Usuarios</a> }
 @if (actual.Puede("ROLES_ADMINISTRAR")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Roles")">Roles y permisos</a> }
+@if (actual.Puede("CATEGORIAS_ADMINISTRAR")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Categorias")">Categorías</a> }
+@if (actual.Puede("MARCAS_ADMINISTRAR")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Marcas")">Marcas</a> }
 </nav>
 <div class="px-3 mt-4">
 @using (Html.BeginForm("Salir", "Acceso", FormMethod.Post)) {

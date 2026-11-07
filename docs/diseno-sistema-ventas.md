@@ -321,3 +321,13 @@ El alcance completo de caja corresponde a la etapa 7. Para que el POS de la etap
 el mínimo de apertura y registro necesario; el cierre, diferencias e historial se
 completarán en la etapa 7. Esta dependencia se hace explícita para no simular una
 caja ni guardar ventas desligadas de ella.
+
+## Etapa 4.1: categorías y marcas
+
+La administración de estos catálogos reutiliza las cuatro capas y permisos
+existentes. La migración 006 impide asociar productos activos a categorías o
+marcas inactivas mediante FK compuestas y una columna generada; conserva las FK
+originales y los productos inactivos. La edición comprueba `xmin` para detectar
+formularios obsoletos. No hay borrado físico ni cambios de stock en esta entrega.
+El recorrido de archivos, migración y validación está en
+[la guía de la etapa 4.1](etapa-4-1-catalogos.md).

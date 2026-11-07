@@ -188,3 +188,11 @@ para desarrolladores y se ejecutó sobre una base descartable.
 
 Las pruebas de contenedores/Mono no sustituyen la aplicación en tu PostgreSQL
 de Windows ni la compilación y navegación final con Visual Studio/IIS Express.
+
+## Actualización de la etapa 4.1
+
+Para una base con la etapa 3 ya validada, aplica únicamente
+`006_catalogos.sql` y verifica con `007_comprobar_catalogos.sql`. No repitas
+las migraciones anteriores para esta actualización. Las reglas de productos
+activos, archivos relacionados y pasos para Windows se explican en
+[la guía de categorías y marcas](../docs/etapa-4-1-catalogos.md).
