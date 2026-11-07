@@ -34,7 +34,7 @@ internal static class ProductosPruebas
         }
     }
     private static SolicitudProducto Nuevo(string codigo="PRUEBA",bool decimales=false)
-    { return new SolicitudProducto{Codigo=codigo,Descripcion="Producto de prueba "+codigo,CategoriaId=categoria,UnidadMedidaId=unidad,PermiteDecimales=decimales,PrecioCompra=123.4567m,PrecioVenta=456.78m,StockMinimo=decimales?0.250m:1m}; }
+    { return new SolicitudProducto{Codigo=codigo,Descripcion="Producto de prueba "+codigo,CategoriaId=categoria,UnidadMedidaId=unidad,PermiteDecimales=decimales,PrecioCompra=123.4567m,PrecioVenta=456.78m,StockMinimo=decimales?0.250m:1m,PorcentajeIva=10,GenerarCodigoBarras=true}; }
     private static void Entrada(long id,decimal cantidad)
     {
         Sql(@"BEGIN;UPDATE productos SET stock_actual=stock_actual+@cantidad WHERE id=@id;
@@ -55,27 +55,27 @@ internal static class ProductosPruebas
             long supervisor=seguridad.GuardarUsuario(admin,new SolicitudUsuario{NombreUsuario="supervisor",Nombre="Supervisor de prueba",Password=Guid.NewGuid().ToString("N"),RolIds=new[]{roles.Single(x=>x.Codigo=="SUPERVISOR").Id}});
             categoria=(long)Sql("SELECT id FROM categorias WHERE nombre='General'");unidad=(long)Sql("SELECT id FROM unidades_medida WHERE codigo='UN'");
             long kg=(long)Sql("SELECT id FROM unidades_medida WHERE codigo='KG'");
-            Comprobar(productos.Listar(cajero).Total==0,"Cajero consulta el listado vacío");
+            Comprobar(productos.Listar(cajero).Total==1,"Cajero consulta el producto anterior a la actualización");
             Denegado(()=>productos.Guardar(cajero,Nuevo()),"Cajero no registra productos por llamada directa");
             Denegado(()=>productos.Listar(0),"Actor inexistente no consulta productos");
             var solicitud=Nuevo("  CAFE-01 ",true);solicitud.Descripcion="  Cafe\u0301 por peso  ";solicitud.UnidadMedidaId=kg;
-            solicitud.CodigosBarras=new List<string>{"0012345678901","0012345678902"};
+            solicitud.CodigoBarra="0012345678901";solicitud.GenerarCodigoBarras=false;
             long id=productos.Guardar(supervisor,solicitud);var p=productos.Obtener(admin,id);
             Comprobar(p.Codigo=="CAFE-01" && p.Descripcion=="Café por peso","Recorte y normalización de código y descripción");
             Comprobar(p.PrecioCompra==123.4567m && p.PrecioVenta==456.78m && p.StockMinimo==.250m && p.StockActual==0,"Precisión decimal exacta y existencia inicial cero");
-            Comprobar(p.CodigosBarras.SequenceEqual(solicitud.CodigosBarras),"Varios códigos conservan los ceros iniciales");
+            Comprobar(p.CodigoBarra==solicitud.CodigoBarra,"Código único conserva los ceros iniciales");
             Comprobar(productos.Listar(cajero,new FiltroProductos{Busqueda="café"}).Registros.Single().Id==id,"Búsqueda por descripción Unicode");
             Comprobar(productos.Listar(admin,new FiltroProductos{Busqueda="cafe-01"}).Registros.Single().Id==id,"Código interno exacto sin distinguir mayúsculas");
-            Comprobar(productos.Listar(admin,new FiltroProductos{Busqueda="0012345678902"}).Registros.Single().Id==id,"Lectura exacta de cualquiera de sus códigos de barras");
+            Comprobar(productos.Listar(admin,new FiltroProductos{Busqueda="0012345678901"}).Registros.Single().Id==id,"Lectura exacta de su código de barras");
             Comprobar(productos.Listar(admin,new FiltroProductos{Busqueda="' OR 1=1 --"}).Total==0,"Búsqueda parametrizada rechaza inyección");
             var duplicado=Nuevo("cafe-01");Denegado(()=>productos.Guardar(admin,duplicado),"Código interno duplicado rechazado");
-            duplicado=Nuevo("OTRO");duplicado.CodigosBarras.Add("0012345678901");Denegado(()=>productos.Guardar(admin,duplicado),"Barra de otro producto rechazada");
+            duplicado=Nuevo("OTRO");duplicado.CodigoBarra="0012345678901";duplicado.GenerarCodigoBarras=false;Denegado(()=>productos.Guardar(admin,duplicado),"Barra de otro producto rechazada");
             duplicado=Nuevo("0012345678901");Denegado(()=>productos.Guardar(admin,duplicado),"Código interno no invade barra de otro producto");
-            duplicado=Nuevo("CRUCE");duplicado.CodigosBarras.Add("cafe-01");Denegado(()=>productos.Guardar(admin,duplicado),"Barra no invade código interno de otro producto");
-            duplicado=Nuevo("REPETIDO");duplicado.CodigosBarras.AddRange(new[]{"123","123"});Denegado(()=>productos.Guardar(admin,duplicado),"Barra repetida dentro del formulario rechazada");
+            duplicado=Nuevo("CRUCE");duplicado.CodigoBarra="cafe-01";duplicado.GenerarCodigoBarras=false;Denegado(()=>productos.Guardar(admin,duplicado),"Barra no invade código interno de otro producto");
+            duplicado=Nuevo("REPETIDO");duplicado.CodigoBarra="123\n456";duplicado.GenerarCodigoBarras=false;Denegado(()=>productos.Guardar(admin,duplicado),"No se admiten dos barras separadas por líneas");
             var invalido=Nuevo("LARGO");invalido.Codigo=new string('x',51);Denegado(()=>productos.Guardar(admin,invalido),"Código mayor a 50 rechazado");
             invalido=Nuevo("DESCRIPCION");invalido.Descripcion=" \n ";Denegado(()=>productos.Guardar(admin,invalido),"Descripción vacía rechazada");
-            invalido=Nuevo("CONTROL");invalido.CodigosBarras.Add("12\n34");Denegado(()=>productos.Guardar(admin,invalido),"Barra con control rechazada");
+            invalido=Nuevo("CONTROL");invalido.CodigoBarra="12\n34";invalido.GenerarCodigoBarras=false;Denegado(()=>productos.Guardar(admin,invalido),"Barra con control rechazada");
             invalido=Nuevo("NEGATIVO");invalido.PrecioCompra=-1;Denegado(()=>productos.Guardar(admin,invalido),"Precio negativo rechazado");
             invalido=Nuevo("REDONDEO");invalido.PrecioVenta=1.001m;Denegado(()=>productos.Guardar(admin,invalido),"Precio de venta no se redondea silenciosamente");
             invalido=Nuevo("ESCALA");invalido.StockMinimo=.1234m;invalido.PermiteDecimales=true;Denegado(()=>productos.Guardar(admin,invalido),"Stock mínimo con más de 3 decimales rechazado");
@@ -94,10 +94,10 @@ internal static class ProductosPruebas
             Denegado(()=>productos.Historial(cajero,id),"Cajero no consulta movimientos sin STOCK_VER");
             Comprobar(productos.Historial(admin,id).Total==0,"Historial vacío sin movimientos simulados");
             long barraId=(long)Sql("SELECT id FROM productos_codigos_barras WHERE codigo='0012345678901'");
-            var viejo=productos.Obtener(admin,id);p=productos.Obtener(admin,id);p.CodigosBarras.RemoveAt(1);p.CodigosBarras.Add("0099999999999");
+            var viejo=productos.Obtener(admin,id);p=productos.Obtener(admin,id);p.CodigoBarra="0099999999999";
             productos.Guardar(admin,p);p=productos.Obtener(admin,id);
-            Comprobar(p.Version!=viejo.Version && !p.CodigosBarras.Contains("0012345678902") && p.CodigosBarras.Contains("0099999999999"),"Cambiar solo barras actualiza la versión y el conjunto");
-            Comprobar((long)Sql("SELECT id FROM productos_codigos_barras WHERE codigo='0012345678901'")==barraId,"Barra conservada mantiene su identificador");
+            Comprobar(p.Version!=viejo.Version && p.CodigoBarra=="0099999999999","Cambiar la única barra actualiza la versión");
+            Comprobar((long)Sql("SELECT id FROM productos_codigos_barras WHERE codigo='0099999999999'")==barraId,"Barra conservada mantiene su identificador");
             Denegado(()=>productos.Guardar(admin,viejo),"Formulario antiguo no deshace cambios de barras");
             Denegado(()=>productos.Desactivar(admin,id,viejo.Version),"Desactivación con versión antigua rechazada");
             Entrada(id,.250m);p=productos.Obtener(admin,id);
@@ -106,11 +106,11 @@ internal static class ProductosPruebas
             cambio=productos.Obtener(admin,id);cambio.PermiteDecimales=false;cambio.StockMinimo=0;Denegado(()=>productos.Guardar(admin,cambio),"Configuración decimal con historial no se cambia");
             p.PrecioVenta=900.50m;p.StockActual=99999;productos.Guardar(admin,p);
             Comprobar(productos.Obtener(admin,id).StockActual==.250m,"Guardar edición ignora StockActual de una entidad manipulada");
-            var sinstock=new Producto{Codigo="SIN-STOCK",Descripcion="Ignorar stock enviado",CategoriaId=categoria,UnidadMedidaId=unidad,StockActual=500};
+            var sinstock=new Producto{Codigo="SIN-STOCK",Descripcion="Ignorar stock enviado",CategoriaId=categoria,UnidadMedidaId=unidad,StockActual=500,PorcentajeIva=0,GenerarCodigoBarras=true};
             long sinstockId=productos.Guardar(admin,sinstock);
             Comprobar(productos.Obtener(admin,sinstockId).StockActual==0,"Creación no acepta existencia enviada por el llamador");
             p=productos.Obtener(admin,id);productos.Desactivar(admin,id,p.Version);p=productos.Obtener(admin,id);
-            Comprobar(!p.Activo && p.StockActual==.250m && p.CodigosBarras.Count==2,"Desactivar conserva existencias, barras e historial");
+            Comprobar(!p.Activo && p.StockActual==.250m && p.CodigoBarra=="0099999999999","Desactivar conserva existencias, barras e historial");
             duplicado=Nuevo("cafe-01");Denegado(()=>productos.Guardar(admin,duplicado),"Código de producto inactivo sigue reservado");
             p.Activo=true;productos.Guardar(admin,p);Comprobar(productos.Obtener(admin,id).Activo,"Reactivar conserva identificador");
             var sinHistoria=Nuevo("CAMBIAR-UNIDAD");long sinHistoriaId=productos.Guardar(admin,sinHistoria);
@@ -157,21 +157,21 @@ internal static class ProductosPruebas
                 ()=>{try{productos.Guardar(admin,b);Interlocked.Increment(ref exitos);}catch(OperacionNoPermitidaException){Interlocked.Increment(ref conflictos);}});
             Comprobar(exitos==1 && conflictos==1,"Ediciones simultáneas no pierden cambios");
             exitos=0;conflictos=0;
-            Parallel.For(0,2,i=>{try{var n=Nuevo("CARRERA-"+i);n.CodigosBarras.Add("BARRA-CONCURRENTE");productos.Guardar(admin,n);Interlocked.Increment(ref exitos);}catch(OperacionNoPermitidaException){Interlocked.Increment(ref conflictos);}});
+            Parallel.For(0,2,i=>{try{var n=Nuevo("CARRERA-"+i);n.CodigoBarra="BARRA-CONCURRENTE";n.GenerarCodigoBarras=false;productos.Guardar(admin,n);Interlocked.Increment(ref exitos);}catch(OperacionNoPermitidaException){Interlocked.Increment(ref conflictos);}});
             Comprobar(exitos==1 && conflictos==1 && (long)Sql("SELECT count(*) FROM productos WHERE codigo LIKE 'CARRERA-%'")==1,"Barra simultánea confirma un solo producto sin inserciones parciales");
             Comprobar((long)Sql("SELECT count(*) FROM auditoria WHERE entidad='productos' AND entidad_id=@id AND accion='PRODUCTO_CREADO'","id",id)==1,"Creación del producto auditada una sola vez");
             long auditoria=(long)Sql("SELECT count(*) FROM auditoria WHERE entidad='productos'");
-            p=productos.Obtener(admin,id);p.CodigosBarras.Add("BARRA-CONCURRENTE");p.Descripcion="No guardar";Denegado(()=>productos.Guardar(admin,p),"Edición con barra ajena rechazada");
+            p=productos.Obtener(admin,id);p.CodigoBarra="BARRA-CONCURRENTE";p.GenerarCodigoBarras=false;p.Descripcion="No guardar";Denegado(()=>productos.Guardar(admin,p),"Edición con barra ajena rechazada");
             Comprobar(productos.Obtener(admin,id).Descripcion!="No guardar" && (long)Sql("SELECT count(*) FROM auditoria WHERE entidad='productos'")==auditoria,"Rechazo conserva datos y auditoría previa");
             Comprobar(productos.Obtener(admin,99999999)==null && productos.Historial(admin,99999999)==null,"Consulta inexistente informa ausencia");
-            var modelo=new ProductoFormulario{Codigo="WEB",Descripcion="Desde formulario",CategoriaId=categoria,UnidadMedidaId=unidad,PermiteDecimales=true,PrecioCompra="123,4567",PrecioVenta="456.78",StockMinimo="0,250",CodigosBarras="001\r\n002\n"};
+            var modelo=new ProductoFormulario{Codigo="WEB",Descripcion="Desde formulario",CategoriaId=categoria,UnidadMedidaId=unidad,PermiteDecimales=true,PrecioCompra="123,4567",PrecioVenta="456.78",StockMinimo="0,250",CodigoBarra="001",PorcentajeIva=5};
             var estado=new ModelStateDictionary();var solicitudWeb=modelo.Solicitud(estado);
-            Comprobar(estado.IsValid && solicitudWeb.PrecioCompra==123.4567m && solicitudWeb.StockMinimo==.250m && solicitudWeb.CodigosBarras.Count==2,"Formulario admite coma y punto sin perder ceros de barras");
+            Comprobar(estado.IsValid && solicitudWeb.PrecioCompra==123.4567m && solicitudWeb.StockMinimo==.250m && solicitudWeb.CodigoBarra=="001","Formulario admite coma y punto sin perder ceros de barras");
             modelo.PrecioVenta="1.234,56";estado=new ModelStateDictionary();modelo.Solicitud(estado);
             Comprobar(!estado.IsValid && estado.ContainsKey("PrecioVenta"),"Formulario rechaza separadores de miles ambiguos");
             var bind=(BindAttribute)typeof(ProductosController).GetMethod("Guardar").GetParameters()[0].GetCustomAttributes(typeof(BindAttribute),false).Single();
             Comprobar(!bind.Include.Contains("StockActual") && !bind.Include.Contains("Opciones") && typeof(SolicitudProducto).GetProperty("StockActual")==null,"El contrato de escritura excluye existencias y opciones");
-            foreach(var accion in new[]{"Guardar","Desactivar"})
+            foreach(var accion in new[]{"Nuevo","Guardar","Desactivar"})
             {
                 var metodo=typeof(ProductosController).GetMethod(accion);
                 Comprobar(metodo.IsDefined(typeof(HttpPostAttribute),true) && metodo.IsDefined(typeof(ValidateAntiForgeryTokenAttribute),true),"POST con antifalsificación: "+accion);
@@ -186,6 +186,51 @@ internal static class ProductosPruebas
             foreach(PermisoAttribute filtro in typeof(ProductosController).GetCustomAttributes(typeof(PermisoAttribute),true)) filtro.OnAuthorization(lectura);
             Comprobar(lectura.Result==null,"Filtro admite consulta de productos al cajero");
             Sql("UPDATE roles SET activo=false WHERE codigo='SUPERVISOR'");Denegado(()=>productos.Listar(supervisor),"Permisos revocados se comprueban en la siguiente operación");
+            Comprobar(Ean13.Generar(26)=="2800000000264" && Ean13.Generar(36)=="2800000000363","Ejemplos EAN-13 de los productos 26 y 36");
+            Comprobar(Ean13.EsValido("4006381333931") && Ean13.EsValido(Ean13.Generar(36)) && !Ean13.EsValido("2800000000364"),"Control EAN-13 estándar y rechazo de dígito alterado");
+            Denegado(()=>Ean13.Generar(0),"Generación rechaza id cero");
+            Denegado(()=>Ean13.Generar(10000000000L),"Generación no trunca un id de más de 10 dígitos");
+            Comprobar(Ean13.Generar(9999999999L).Length==13,"Último id admitido genera exactamente 13 dígitos");
+            using(var c=new NpgsqlConnection(cadena))
+            {
+                c.Open();using(var cmd=new NpgsqlCommand("SELECT n,sv_ean13_producto(n) FROM generate_series(1,1000) n",c))
+                using(var reader=cmd.ExecuteReader()) while(reader.Read())
+                    if(reader.GetString(1)!=Ean13.Generar(reader.GetInt32(0))) throw new Exception("SQL y C# difieren en EAN-13");
+            }
+            Comprobar(true,"SQL y C# coinciden en 1000 identificadores EAN-13");
+            var legacyId=(long)Sql("SELECT id FROM productos WHERE codigo='LEGADO'");
+            var legacy=productos.Obtener(admin,legacyId);
+            Comprobar(legacy.PorcentajeIva==null && legacy.CodigoBarra=="LEGADO-BARRA" && legacy.PrecioVenta==123.45m,"Migración conserva barra, precio e IVA pendiente de producto anterior");
+            Denegado(()=>productos.Guardar(admin,legacy),"Producto anterior requiere seleccionar su IVA al editar");
+            legacy.PorcentajeIva=5;productos.Guardar(admin,legacy);legacy=productos.Obtener(admin,legacyId);
+            legacy.PorcentajeIva=10;productos.Guardar(admin,legacy);
+            Comprobar(productos.Obtener(admin,legacyId).PrecioVenta==123.45m && productos.Obtener(admin,legacyId).PrecioCompra==90m,"Cambiar IVA conserva ambos precios que ya incluyen el impuesto");
+            var sinIva=Nuevo("IVA-NULO");sinIva.PorcentajeIva=null;Denegado(()=>productos.Guardar(admin,sinIva),"No se asigna IVA implícito a un producto nuevo");
+            sinIva.PorcentajeIva=7;Denegado(()=>productos.Guardar(admin,sinIva),"IVA fuera de 0,5,10 rechazado");
+            Denegado(()=>productos.ReservarNuevo(cajero),"Cajero no reserva números de productos");
+            long antes=(long)Sql("SELECT count(*) FROM productos");
+            var reservas=new long[8];Parallel.For(0,8,i=>reservas[i]=productos.ReservarNuevo(admin));
+            Comprobar(reservas.Distinct().Count()==8 && (long)Sql("SELECT count(*) FROM productos")==antes,"Reservas simultáneas distintas sin crear productos vacíos");
+            var automatico=Nuevo("AUTO-RESERVADO");automatico.IdNuevo=reservas[0];automatico.CodigoBarra="NO-CONFIAR";
+            long automaticoId=productos.Guardar(admin,automatico);var generado=productos.Obtener(admin,automaticoId);
+            Comprobar(automaticoId==reservas[0] && generado.CodigoBarra==Ean13.Generar(automaticoId) && generado.GenerarCodigoBarras,"Guardar conserva el número reservado y recalcula su EAN-13");
+            Denegado(()=>productos.Guardar(admin,automatico),"Reenviar el formulario no duplica el producto ni lo sobrescribe");
+            long automatico2=productos.Guardar(admin,new SolicitudProducto{IdNuevo=reservas[7],Codigo="OTRA-RESERVA",Descripcion="Segunda reserva",CategoriaId=categoria,UnidadMedidaId=unidad,PorcentajeIva=0,GenerarCodigoBarras=true});
+            Comprobar(automatico2==reservas[7] && productos.Obtener(admin,automatico2).CodigoBarra==Ean13.Generar(automatico2),"Guardar fuera del orden de reserva mantiene cada id y barra");
+            bool segundaRechazada=false;
+            try{Sql("INSERT INTO productos_codigos_barras(producto_id,codigo) VALUES (@id,'SEGUNDA-BARRA')","id",automaticoId);}catch(PostgresException e)when(e.SqlState=="23505"){segundaRechazada=true;}
+            Comprobar(segundaRechazada,"PostgreSQL impide una segunda barra incluso mediante SQL directo");
+            bool incorrecta=false;
+            try{Sql("UPDATE productos_codigos_barras SET codigo='BARRA-FALSA' WHERE producto_id=@id","id",automaticoId);}catch(PostgresException e)when(e.SqlState=="23503"){incorrecta=true;}
+            Comprobar(incorrecta && productos.Obtener(admin,automaticoId).CodigoBarra==Ean13.Generar(automaticoId),"PostgreSQL revierte una barra generada que no coincide con su id");
+            bool ivaRechazado=false;
+            try{Sql("UPDATE productos SET porcentaje_iva=7 WHERE id=@id","id",automaticoId);}catch(PostgresException e)when(e.SqlState=="23514"){ivaRechazado=true;}
+            Comprobar(ivaRechazado,"PostgreSQL rechaza porcentajes no admitidos");
+            var token=ReservaNuevoProducto.Crear(reservas[1],admin);
+            Comprobar(ReservaNuevoProducto.Leer(token,admin)==reservas[1],"Reserva protegida conserva su id");
+            Denegado(()=>ReservaNuevoProducto.Leer(token,cajero),"La reserva no se puede copiar a otro usuario");
+            Denegado(()=>ReservaNuevoProducto.Leer("alterado",admin),"Reserva alterada rechazada");
+            Comprobar(!bind.Include.Contains("IdNuevo"),"El id reservado no se acepta como un campo modificable por el navegador");
             Console.WriteLine("TOTAL: "+cantidad+" comprobaciones de productos correctas.");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e.GetType().Name+": "+e.Message);return 1;}

@@ -1,4 +1,5 @@
 ﻿using System.Web.Mvc;
+using SistemaVentas.Negocio;
 using SistemaVentas.Entidades;
 using SistemaVentas.Web.Seguridad;
 using SistemaVentas.Web.ViewModels;
@@ -23,7 +24,13 @@ namespace SistemaVentas.Web.Controllers
             return View(producto);
         }
         [HttpGet,Permiso("PRODUCTOS_EDITAR")]
-        public ActionResult Crear() { return Formulario(new ProductoFormulario()); }
+        public ActionResult Crear() { return RedirectToAction("Index"); }
+        [HttpPost,ValidateAntiForgeryToken,Permiso("PRODUCTOS_EDITAR")]
+        public ActionResult Nuevo()
+        {
+            long id=Aplicacion.Productos().ReservarNuevo(Actor);
+            return Formulario(new ProductoFormulario { IdNuevo=id,Codigo=id.ToString(System.Globalization.CultureInfo.InvariantCulture),Reserva=ReservaNuevoProducto.Crear(id,Actor) });
+        }
         [HttpGet,Permiso("PRODUCTOS_EDITAR")]
         public ActionResult Editar(long id)
         {
@@ -32,8 +39,13 @@ namespace SistemaVentas.Web.Controllers
             return Formulario(ProductoFormulario.Desde(producto));
         }
         [HttpPost,ValidateAntiForgeryToken,Permiso("PRODUCTOS_EDITAR")]
-        public ActionResult Guardar([Bind(Include="Id,Version,Codigo,Descripcion,CategoriaId,MarcaId,UnidadMedidaId,PermiteDecimales,PrecioCompra,PrecioVenta,StockMinimo,Activo,CodigosBarras")] ProductoFormulario modelo)
+        public ActionResult Guardar([Bind(Include="Id,Version,Codigo,Descripcion,CategoriaId,MarcaId,UnidadMedidaId,PermiteDecimales,PrecioCompra,PrecioVenta,StockMinimo,Activo,CodigoBarra,GenerarCodigoBarras,PorcentajeIva,Reserva")] ProductoFormulario modelo)
         {
+            if(modelo.Id==0)
+            {
+                try { modelo.IdNuevo=ReservaNuevoProducto.Leer(modelo.Reserva,Actor); }
+                catch(OperacionNoPermitidaException e) { ModelState.AddModelError("",e.Message); }
+            }
             var solicitud=modelo.Solicitud(ModelState);
             if(ModelState.IsValid)
             {
@@ -69,6 +81,8 @@ namespace SistemaVentas.Web.Controllers
             var actual=modelo.Id>0?servicio.Obtener(Actor,modelo.Id):null;
             if(modelo.Id>0 && actual==null) return HttpNotFound();
             modelo.StockActual=actual==null?0:actual.StockActual;
+            long idCodigo=actual==null?modelo.IdNuevo:actual.Id;
+            modelo.CodigoGenerado=idCodigo>0 && idCodigo<=9999999999L?Ean13.Generar(idCodigo):"";
             return View("Formulario",modelo);
         }
     }

@@ -21,10 +21,10 @@ Navegador ← vistas Razor ← entidades y modelos del formulario
   paginados, opciones de selección e historial. El contrato de escritura no
   contiene `StockActual`.
 - **Datos — `ProductosRepositorio.cs`:** ejecuta SQL con parámetros y abre una
-  transacción por operación. Consulta los catálogos existentes, sincroniza los
-  códigos de barras y registra auditoría. Al editar bloquea la fila del producto
+  transacción por operación. Consulta los catálogos existentes, guarda la
+  barra única y registra auditoría. Al editar bloquea la fila del producto
   y compara su versión. Las consultas de lectura usan una instantánea coherente
-  para que el detalle y sus barras, o el stock y su historial, correspondan a
+  para que el detalle y su barra, o el stock y su historial, correspondan a
   la misma lectura.
 - **Negocio — `ServicioProductos.cs`:** comprueba permisos, longitudes,
   referencias, rangos y precisión de decimales; evita identificadores repetidos
@@ -66,17 +66,54 @@ no permite cantidades decimales, el stock mínimo debe ser entero. La unidad
 KG no activa por sí sola esta opción: marca **Permite cantidades decimales**
 si necesitas vender fracciones de kilogramo.
 
-Puedes registrar hasta 50 códigos de barras, uno por línea y hasta 100
-caracteres cada uno. Se tratan como texto: `001234` conserva sus ceros.
-El código interno es único ignorando mayúsculas y espacios iniciales/finales;
-las barras se comparan de forma literal. Los identificadores de productos
-inactivos siguen reservados mientras estén asociados a ellos. Para quitar una
-barra, elimínala del formulario y guarda; las barras conservadas mantienen su id.
+Cada producto tiene **un solo código de barras** de hasta 100 caracteres,
+tratado como texto para conservar los ceros iniciales. Si dispone de código,
+escríbelo en el campo único. Si no lo tiene, marca **El producto no tiene código
+de barras** y se mostrará su EAN-13 interno. Esta regla sustituye la variante
+inicial que admitía varias barras por producto.
 
-La aplicación también rechaza que un código interno coincida con la barra de
-otro producto, o viceversa. Esta regla compartida se comprueba bajo un bloqueo
-transaccional de las escrituras del módulo; los índices existentes de
-PostgreSQL garantizan la unicidad de códigos y barras por separado.
+Al pulsar Nuevo producto se reserva un ID usando la secuencia de PostgreSQL,
+sin insertar productos vacíos. La reserva está protegida contra alteraciones y
+vinculada al usuario; el formulario tiene una vigencia de 8 horas. Dos usuarios
+o pestañas reciben números distintos. Cancelar o fallar una operación puede
+consumir un número: son identificadores únicos, no una numeración sin saltos.
+
+El EAN-13 usa `28` más el ID completado con ceros hasta diez posiciones;
+a los doce dígitos resultantes se agrega el control de EAN-13:
+
+| ID del producto | Base de 12 dígitos | Control | EAN-13 |
+| ---: | --- | ---: | --- |
+| 26 | 280000000026 | 4 | 2800000000264 |
+| 36 | 280000000036 | 3 | 2800000000363 |
+
+El servidor vuelve a calcular la barra al guardar. La casilla cambia el campo
+a solo lectura para mostrar ese valor; no se confía en un código automático
+modificado desde el navegador. La base comprueba al confirmar la transacción
+que una barra marcada como generada corresponda al ID real del producto.
+Los códigos manuales conservan su formato original; no se obliga a que todos
+los fabricantes utilicen EAN-13. La generación interna admite IDs de 1 a
+9999999999 y no trunca identificadores más largos.
+
+El código interno sigue siendo un campo separado y editable; en un formulario
+nuevo se propone el número reservado. No es el dato usado para calcular el
+EAN: aunque edites el código interno, la barra automática conserva el ID real.
+Los códigos de productos inactivos siguen reservados mientras estén asociados.
+La aplicación rechaza conflictos entre códigos internos y barras de otros
+productos; los índices de PostgreSQL garantizan la unicidad de cada tipo y
+una sola barra por producto. Al sustituir una barra se conserva su fila e ID.
+
+### IVA del producto
+
+Selecciona **Exento (0 %), 5 % o 10 %**. Los precios de compra y venta ingresados
+**ya incluyen IVA**, según lo confirmado por el usuario. Elegir o cambiar el
+porcentaje no vuelve a sumar el impuesto ni altera los importes guardados.
+El porcentaje se muestra en listado y detalle y debe elegirse explícitamente
+al crear o editar. La liquidación y copia de la tasa a cada detalle de venta o
+compra se implementarán con esos módulos, conservando el impuesto histórico.
+
+Los productos anteriores se muestran con **IVA pendiente** hasta que el usuario
+seleccione su tasa correcta; no se adivina una tasa ni se los clasifica como
+exentos automáticamente. Un campo pendiente no equivale a 0 %.
 
 La búsqueda admite una parte de la descripción, el código interno completo
 sin distinguir mayúsculas o cualquiera de sus barras completas. Las coincidencias
@@ -124,21 +161,40 @@ antifalsificación. Las peticiones requieren la configuración HTTPS existente.
 
 ## Incorporar en tu notebook
 
-Esta entrega utiliza las tablas e índices existentes: **no hay una nueva
-migración SQL ni paquetes NuGet adicionales**. Debe estar aplicada y revisada
-la etapa 4.1, incluida la versión 006. No recrees la base ni repitas migraciones
-anteriores para actualizar los productos.
+La corrección de IVA y barra única requiere **008_producto_iva_ean13.sql**
+sobre la base existente con la etapa 4.1 (006) validada. No agrega paquetes
+NuGet ni reemplaza proyectos. No recrees la base ni repitas 001, 002, 004 o 006.
+
+Antes de actualizar, esta consulta de solo lectura identifica productos con
+más de una barra:
+
+```sql
+SELECT p.id, p.codigo, p.descripcion, array_agg(b.codigo ORDER BY b.id) AS barras
+FROM public.productos p JOIN public.productos_codigos_barras b ON b.producto_id=p.id
+GROUP BY p.id,p.codigo,p.descripcion HAVING count(*)>1 ORDER BY p.id;
+```
+
+Si hay resultados, elige cuál conservar en la pantalla anterior antes de aplicar
+008. La migración se detiene mostrando los IDs y no elimina barras por ti.
+La información de precios, stock, documentos e historial se conserva.
 
 Cuando el código de esta entrega esté disponible:
 
 1. Detén la aplicación en Visual Studio. Ejecuta `git status --short` en
    `D:\Sistemas\SistemaVentas` y conserva tus cambios locales si aparecen.
    Sigue los comandos de actualización de la rama indicados en el chat.
-2. Abre la solución de **esa misma carpeta**, restaura NuGet si Visual Studio
+2. En pgAdmin abre el Query Tool de tu base del sistema y ejecuta
+   `database/008_producto_iva_ean13.sql`. Debe terminar en COMMIT y avisar que
+   se aplicó 008. Luego ejecuta `database/009_comprobar_producto_iva_ean13.sql`.
+   Debe verificar las restricciones y mostrar cuántos productos tienen IVA
+   pendiente. Repetir la migración idéntica no duplica datos; un checksum
+   modificado se rechaza. Si hay varias barras o un bloqueo, la transacción
+   completa se revierte: revisa el mensaje antes de repetir.
+3. Abre la solución de **esa misma carpeta**, restaura NuGet si Visual Studio
    lo solicita y recompila. Conserva `AppSettings.Local.config` fuera de Git.
-3. Inicia por HTTPS e ingresa como administrador. Abre **Productos** desde
+4. Inicia por HTTPS e ingresa como administrador. Abre **Productos** desde
    el menú. No necesitas crear otra cuenta ni modificar la conexión.
-4. Puedes ejecutar `database/007_comprobar_catalogos.sql` y
+5. Puedes ejecutar `database/007_comprobar_catalogos.sql` y
    `database/003_comprobar_estructura.sql` si quieres confirmar que la base
    sigue íntegra; ambos son verificadores, no una reinstalación.
 
@@ -147,16 +203,16 @@ Cuando el código de esta entrega esté disponible:
 1. Crea una categoría y una marca activas, si no tienes una apropiada.
 2. Registra un producto con código `CAFE-KG`, descripción `Café por kilogramo`,
    unidad KG, cantidades decimales activadas, precio de compra `10,1234`,
-   venta `15,50`, mínimo `0,250` y dos barras en líneas separadas:
-   `0012345678901` y `0012345678902` (usa otros valores si ya existen).
+   venta `15,50`, mínimo `0,250`, IVA 10 % y una barra de fabricante
+   (usa un valor que no esté registrado).
 3. Comprueba los valores en el detalle. La existencia inicial debe ser cero
-   y las barras deben conservar los ceros iniciales. Busca por parte de la
-   descripción, código completo y cada barra. Prueba el lector con Enter.
-4. Intenta repetir el código en otro producto o usar una de sus barras: debe
+   y la barra debe conservar los ceros iniciales. Busca por parte de la
+   descripción, código completo y barra. Prueba el lector con Enter.
+4. Intenta repetir el código en otro producto o usar su barra: debe
    rechazarlo. Prueba un precio negativo o venta con tres decimales; no debe
    redondear ni guardar. En un producto sin cantidades decimales, prueba un
    mínimo `0,250`: debe rechazarlo.
-5. Edita un precio y reemplaza una barra. Comprueba que los demás datos y la
+5. Edita un precio y reemplaza la barra. Comprueba que los demás datos y la
    existencia se conserven. La barra quitada ya no debe encontrar ese producto.
 6. Abre el mismo producto para editar en dos pestañas. Guarda en la primera;
    guardar desde la segunda debe rechazar la versión antigua.
@@ -171,6 +227,18 @@ Cuando el código de esta entrega esté disponible:
    `/Productos/Movimientos/{id}` deben dar 403 sin los permisos correspondientes.
 10. Comprueba tildes, formularios y tablas en una ventana estrecha, además de
     Inicio, Categorías, Marcas, Usuarios, Roles y Cerrar sesión.
+
+También comprueba la corrección:
+
+1. Pulsa Nuevo producto, anota el número y marca la casilla de producto sin
+   barra. Debe mostrar 13 dígitos, empezar con 28 y conservarse al guardar.
+2. Abre dos formularios nuevos: sus números y barras deben ser distintos.
+   Puedes guardarlos en orden inverso. Cancelar uno no crea un producto vacío.
+3. Prueba marcar y desmarcar la casilla: la barra manual se recupera y el campo
+   automático queda de solo lectura. No hay área de texto para varias barras.
+4. Selecciona Exento, 5 % o 10 %; guarda y revisa listado/detalle. Cambiar la
+   tasa debe conservar los precios. Un producto anterior obliga a elegir IVA
+   antes de guardar una edición.
 
 ## Pruebas y límites de esta entrega
 
@@ -194,10 +262,17 @@ Windows. `--catalogos` prueba la etapa 4.1; sin ninguna de esas dos opciones,
 prueba seguridad. Los cuatro proyectos y las 15 vistas Razor se compilan contra
 .NET Framework 4.8 en cada ejecución.
 
-Resultado de esta entrega: **75 comprobaciones de productos**, **60 de
-catálogos** y **58 de seguridad** correctas, junto con la compilación de los
-cuatro proyectos y las 15 vistas. También se ejecutaron los verificadores
-existentes del esquema y la comprobación transaccional de la migración 006.
+La corrección pasó **99 comprobaciones de productos**, **60 de catálogos** y
+**58 de seguridad**, incluyendo comparación
+entre SQL y C# para 1000 IDs, reservas simultáneas, protección de reservas,
+IVA y restricciones reales de la base. Compilan los cuatro proyectos y las
+15 vistas. Se comprueba que 008 se repite sin duplicar, rechaza un checksum
+distinto y revierte por completo si existen varias barras por producto.
+
+`tests/productos/probar_formulario.py` verifica con Chromium/Playwright el
+script real de la casilla (campo manual/automático, solo lectura y recuperación
+del valor manual) en un DOM aislado. Esta prueba del componente no se presenta
+como un recorrido HTTP completo de ASP.NET.
 
 Se intentó abrir la aplicación con Chromium y un host ASP.NET temporal en
 Mono 6.12. El arranque encontró la incompatibilidad existente al resolver

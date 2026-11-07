@@ -196,3 +196,12 @@ Para una base con la etapa 3 ya validada, aplica únicamente
 las migraciones anteriores para esta actualización. Las reglas de productos
 activos, archivos relacionados y pasos para Windows se explican en
 [la guía de categorías y marcas](../docs/etapa-4-1-catalogos.md).
+
+## Corrección de productos: IVA y EAN-13
+
+Sobre la base con 006 validada, aplica `008_producto_iva_ean13.sql` y verifica
+con `009_comprobar_producto_iva_ean13.sql`. 008 no borra barras ni asigna IVA
+a los productos anteriores: detiene la actualización si hay más de una barra
+por producto y deja el impuesto anterior pendiente. Consulta el procedimiento
+previo de selección de barra y los pasos de actualización en
+[la guía de productos](../docs/etapa-4-2-productos.md).

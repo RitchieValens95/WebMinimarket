@@ -13,7 +13,7 @@ namespace SistemaVentas.Datos
         private readonly NpgsqlTransaction transaccion;
         private const string Columnas = @"p.id,p.codigo,p.descripcion,p.categoria_id,p.marca_id,p.unidad_medida_id,
             p.permite_decimales,p.precio_compra,p.precio_venta,p.stock_actual,p.stock_minimo,p.activo,
-            p.xmin::text::bigint,c.nombre,coalesce(m.nombre,''),u.codigo";
+            p.xmin::text::bigint,c.nombre,coalesce(m.nombre,''),u.codigo,p.porcentaje_iva,p.codigo_barras_generado";
         private const string Tablas = @" FROM public.productos p JOIN public.categorias c ON c.id=p.categoria_id
             LEFT JOIN public.marcas m ON m.id=p.marca_id JOIN public.unidades_medida u ON u.id=p.unidad_medida_id ";
 
@@ -40,8 +40,8 @@ namespace SistemaVentas.Datos
         }
         public void PrepararEscritura()
         {
-            using (var cmd = Comando("SELECT EXISTS(SELECT 1 FROM public.esquema_versiones WHERE version='006')"))
-                if (!(bool)cmd.ExecuteScalar()) throw new OperacionNoPermitidaException("Completa la actualización de categorías y marcas antes de guardar productos.");
+            using (var cmd = Comando("SELECT EXISTS(SELECT 1 FROM public.esquema_versiones WHERE version='008')"))
+                if (!(bool)cmd.ExecuteScalar()) throw new OperacionNoPermitidaException("Aplica la actualización de IVA y código de barras antes de guardar productos.");
             // Serializa cambios de identificadores entre productos de la aplicación.
             using (var cmd = Comando("SELECT pg_advisory_xact_lock(783144982401)")) cmd.ExecuteNonQuery();
         }
@@ -51,7 +51,7 @@ namespace SistemaVentas.Datos
                 Id=r.GetInt64(0), Codigo=r.GetString(1), Descripcion=r.GetString(2), CategoriaId=r.GetInt64(3),
                 MarcaId=r.IsDBNull(4)?(long?)null:r.GetInt64(4), UnidadMedidaId=r.GetInt64(5), PermiteDecimales=r.GetBoolean(6),
                 PrecioCompra=r.GetDecimal(7), PrecioVenta=r.GetDecimal(8), StockActual=r.GetDecimal(9), StockMinimo=r.GetDecimal(10),
-                Activo=r.GetBoolean(11), Version=r.GetInt64(12), Categoria=r.GetString(13), Marca=r.GetString(14), UnidadMedida=r.GetString(15)
+                Activo=r.GetBoolean(11), Version=r.GetInt64(12), Categoria=r.GetString(13), Marca=r.GetString(14), UnidadMedida=r.GetString(15),PorcentajeIva=r.IsDBNull(16)?(int?)null:r.GetInt16(16),GenerarCodigoBarras=r.GetBoolean(17)
             };
         }
         public Producto Obtener(long id, bool bloquear = false)
@@ -61,7 +61,7 @@ namespace SistemaVentas.Datos
             using (var r = cmd.ExecuteReader()) producto = r.Read() ? Leer(r) : null;
             if (producto != null)
                 using (var cmd = Comando("SELECT codigo FROM public.productos_codigos_barras WHERE producto_id=@id ORDER BY codigo", "id", id))
-                using (var r = cmd.ExecuteReader()) while (r.Read()) producto.CodigosBarras.Add(r.GetString(0));
+                using (var r = cmd.ExecuteReader()) while (r.Read()) producto.CodigoBarra=r.GetString(0);
             return producto;
         }
         public PaginaProductos Listar(FiltroProductos f)
@@ -113,15 +113,19 @@ namespace SistemaVentas.Datos
             using (var cmd = Comando("SELECT id FROM public.unidades_medida WHERE id=@id FOR KEY SHARE", "id",p.UnidadMedidaId))
                 if(cmd.ExecuteScalar()==null) throw new OperacionNoPermitidaException("Selecciona una unidad de medida válida.");
         }
+        public long ReservarId()
+        {
+            // La secuencia es la misma que usa la identidad. No se calcula MAX(id)+1.
+            using(var cmd=Comando("SELECT nextval(pg_get_serial_sequence('public.productos','id'))"))
+                return (long)cmd.ExecuteScalar();
+        }
         public void ValidarIdentificadores(SolicitudProducto p)
         {
-            // Los índices únicos siguen siendo la última protección para códigos y barras.
-            using (var cmd = Comando(@"SELECT EXISTS(SELECT 1 FROM public.productos WHERE id<>@id AND
-                    (lower(btrim(codigo))=lower(@codigo) OR lower(btrim(codigo)) IN (SELECT lower(x) FROM unnest(@barras) x)))
+            using(var cmd=Comando(@"SELECT EXISTS(SELECT 1 FROM public.productos WHERE id<>@id AND
+                (lower(btrim(codigo))=lower(@codigo) OR lower(btrim(codigo))=lower(@barra)))
                 OR EXISTS(SELECT 1 FROM public.productos_codigos_barras WHERE producto_id<>@id AND
-                    (lower(codigo)=lower(@codigo) OR codigo=ANY(@exactas)))",
-                "id",p.Id,"codigo",p.Codigo,"barras",p.CodigosBarras.ToArray(),"exactas",p.CodigosBarras.ToArray()))
-                if ((bool)cmd.ExecuteScalar()) throw new OperacionNoPermitidaException("El código o uno de los códigos de barras ya identifica otro producto, incluso si está inactivo.");
+                (lower(codigo)=lower(@codigo) OR codigo=@barra))", "id",p.Id,"codigo",p.Codigo,"barra",p.CodigoBarra))
+                if((bool)cmd.ExecuteScalar()) throw new OperacionNoPermitidaException("El código interno o de barras ya identifica otro producto, incluso si está inactivo.");
         }
         public long Guardar(SolicitudProducto p)
         {
@@ -134,25 +138,23 @@ namespace SistemaVentas.Datos
         private long GuardarInterno(SolicitudProducto p)
         {
             string sql = p.Id==0
-                ? @"INSERT INTO public.productos(codigo,descripcion,categoria_id,marca_id,unidad_medida_id,permite_decimales,precio_compra,precio_venta,stock_minimo,activo)
-                    VALUES (@codigo,@descripcion,@categoria,@marca,@unidad,@decimales,@compra,@venta,@minimo,@activo) RETURNING id"
-                : @"UPDATE public.productos SET codigo=@codigo,descripcion=@descripcion,categoria_id=@categoria,marca_id=@marca,unidad_medida_id=@unidad,
+                ? @"INSERT INTO public.productos(id,porcentaje_iva,codigo_barras_generado,codigo,descripcion,categoria_id,marca_id,unidad_medida_id,permite_decimales,precio_compra,precio_venta,stock_minimo,activo)
+                    VALUES (@id_nuevo,@iva,@generado,@codigo,@descripcion,@categoria,@marca,@unidad,@decimales,@compra,@venta,@minimo,@activo) RETURNING id"
+                : @"UPDATE public.productos SET porcentaje_iva=@iva,codigo_barras_generado=@generado,codigo=@codigo,descripcion=@descripcion,categoria_id=@categoria,marca_id=@marca,unidad_medida_id=@unidad,
                     permite_decimales=@decimales,precio_compra=@compra,precio_venta=@venta,stock_minimo=@minimo,activo=@activo
                     WHERE id=@id AND xmin::text::bigint=@version RETURNING id";
             long id;
             using (var cmd = Comando(sql, "codigo",p.Codigo,"descripcion",p.Descripcion,"categoria",p.CategoriaId,"marca",p.MarcaId,
                 "unidad",p.UnidadMedidaId,"decimales",p.PermiteDecimales,"compra",p.PrecioCompra,"venta",p.PrecioVenta,"minimo",p.StockMinimo,
-                "activo",p.Activo,"id",p.Id,"version",p.Version))
+                "activo",p.Activo,"id",p.Id,"version",p.Version,"id_nuevo",p.IdNuevo,"iva",p.PorcentajeIva,"generado",p.GenerarCodigoBarras))
             {
                 object resultado=cmd.ExecuteScalar();
                 if (resultado==null) throw new OperacionNoPermitidaException("El producto cambió en otra ventana. Vuelve al listado y abre Editar nuevamente.");
                 id=(long)resultado;
             }
-            // Solo se sincroniza el conjunto cambiado; los códigos conservados mantienen su id.
-            using (var cmd = Comando("DELETE FROM public.productos_codigos_barras WHERE producto_id=@id AND NOT (codigo=ANY(@barras))", "id",id,"barras",p.CodigosBarras.ToArray())) cmd.ExecuteNonQuery();
-            foreach (string barra in p.CodigosBarras)
-                using (var cmd = Comando(@"INSERT INTO public.productos_codigos_barras(producto_id,codigo)
-                    SELECT @id,@codigo WHERE NOT EXISTS(SELECT 1 FROM public.productos_codigos_barras WHERE producto_id=@id AND codigo=@codigo)","id",id,"codigo",barra)) cmd.ExecuteNonQuery();
+            // Una única fila por producto. Al cambiar la barra se conserva su id.
+            using(var cmd=Comando(@"INSERT INTO public.productos_codigos_barras(producto_id,codigo) VALUES (@id,@barra)
+                ON CONFLICT(producto_id) DO UPDATE SET codigo=EXCLUDED.codigo", "id",id,"barra",p.CodigoBarra)) cmd.ExecuteNonQuery();
             return id;
         }
         public void Desactivar(long id, long version)

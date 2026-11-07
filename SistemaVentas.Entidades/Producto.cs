@@ -17,7 +17,10 @@ namespace SistemaVentas.Entidades
         public decimal PrecioVenta { get; set; }
         public decimal StockMinimo { get; set; }
         public bool Activo { get; set; } = true;
-        public List<string> CodigosBarras { get; set; } = new List<string>();
+        public long IdNuevo { get; set; }
+        public string CodigoBarra { get; set; }
+        public bool GenerarCodigoBarras { get; set; }
+        public int? PorcentajeIva { get; set; }
     }
 
     public class Producto : SolicitudProducto

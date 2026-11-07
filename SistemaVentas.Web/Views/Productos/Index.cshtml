@@ -9,7 +9,12 @@
 }
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
 <h1 class="h2">Productos</h1>
-@if(puedeEditar) { <a class="btn btn-primary" href="@Url.Action("Crear")">Nuevo producto</a> }
+@if(puedeEditar) {
+using(Html.BeginForm("Nuevo","Productos",FormMethod.Post)) {
+@Html.AntiForgeryToken()
+<button class="btn btn-primary" type="submit">Nuevo producto</button>
+}
+}
 </div>
 @using(Html.BeginForm("Index","Productos",FormMethod.Get,new{@class="row g-2 mb-3"})) {
 <div class="col-lg-6"><label for="Busqueda" class="form-label">Descripción, código interno o código de barras</label>
@@ -26,10 +31,10 @@
 }
 <p>@Model.Datos.Total producto(s) encontrado(s).</p>
 <div class="table-responsive bg-white border rounded"><table class="table table-hover align-middle mb-0">
-<thead><tr><th scope="col">Código</th><th scope="col">Descripción</th><th scope="col">Categoría / marca</th><th scope="col">Precio de venta</th><th scope="col">Existencias</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>
+<thead><tr><th scope="col">Código</th><th scope="col">Descripción</th><th scope="col">Categoría / marca</th><th scope="col">Precio de venta</th><th scope="col">IVA</th><th scope="col">Existencias</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>
 @foreach(var p in Model.Datos.Registros) {
 <tr><td>@p.Codigo</td><td>@p.Descripcion</td><td>@p.Categoria<br /><span class="text-muted">@(string.IsNullOrEmpty(p.Marca)?"Sin marca":p.Marca)</span></td>
-<td>@p.PrecioVenta.ToString("N2",cultura)</td><td>@p.StockActual.ToString(p.PermiteDecimales?"N3":"N0",cultura) @p.UnidadMedida
+<td>@p.PrecioVenta.ToString("N2",cultura)</td><td>@(p.PorcentajeIva.HasValue?(p.PorcentajeIva.Value==0?"Exento":p.PorcentajeIva.Value+" %"):"Pendiente")</td><td>@p.StockActual.ToString(p.PermiteDecimales?"N3":"N0",cultura) @p.UnidadMedida
 @if(p.StockActual<=p.StockMinimo) { <span class="badge bg-warning text-dark">@(p.StockActual==0?"Agotado":"Stock bajo")</span> }</td>
 <td>@(p.Activo?"Activo":"Inactivo")</td><td>
 <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Detalle",new{id=p.Id})">Ver</a>
@@ -45,7 +50,7 @@ using(Html.BeginForm("Desactivar","Productos",FormMethod.Post,new{@class="d-inli
 }
 </td></tr>
 }
-@if(Model.Datos.Registros.Count==0) { <tr><td colspan="7" class="text-center py-4">No hay productos para esta búsqueda.</td></tr> }
+@if(Model.Datos.Registros.Count==0) { <tr><td colspan="8" class="text-center py-4">No hay productos para esta búsqueda.</td></tr> }
 </tbody></table></div>
 <nav class="d-flex align-items-center gap-3 mt-3" aria-label="Paginación de productos">
 @if(f.Pagina>1) { <a href="@Url.Action("Index",new{Pagina=f.Pagina-1,f.Busqueda,f.Estado,f.CategoriaId,f.MarcaId,f.Stock})">Anterior</a> }

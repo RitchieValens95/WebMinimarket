@@ -396,4 +396,9 @@
     <Content Include="Views\Productos\Index.cshtml" />
     <Content Include="Views\Productos\Movimientos.cshtml" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Scripts\ProductoFormulario.js" />
+    <Content Include="Scripts\jquery-3.7.0.intellisense.js" />
+    <Compile Include="Seguridad\ReservaNuevoProducto.cs" />
+  </ItemGroup>
 </Project>

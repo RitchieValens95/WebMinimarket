@@ -30,8 +30,15 @@ namespace SistemaVentas.Web.ViewModels
         [Required(ErrorMessage="Escribe el stock mínimo."),StringLength(32,ErrorMessage="El número admite hasta 32 caracteres."),Display(Name="Stock mínimo")]
         public string StockMinimo { get; set; } = "0";
         public bool Activo { get; set; } = true;
-        [StringLength(5100,ErrorMessage="Admite hasta 50 códigos de barras de 100 caracteres."),Display(Name="Códigos de barras (uno por línea)")]
-        public string CodigosBarras { get; set; }
+        [StringLength(100,ErrorMessage="El código de barras admite hasta 100 caracteres."),Display(Name="Código de barras")]
+        public string CodigoBarra { get; set; }
+        [Display(Name="El producto no tiene código de barras")]
+        public bool GenerarCodigoBarras { get; set; }
+        [Required(ErrorMessage="Selecciona el IVA del producto."),Display(Name="IVA incluido en los precios")]
+        public int? PorcentajeIva { get; set; }
+        [StringLength(2048)] public string Reserva { get; set; }
+        public long IdNuevo { get; set; }
+        public string CodigoGenerado { get; set; }
         public decimal StockActual { get; set; }
         public OpcionesProducto Opciones { get; set; } = new OpcionesProducto();
 
@@ -43,7 +50,7 @@ namespace SistemaVentas.Web.ViewModels
             if(!Numero(StockMinimo,out minimo)) estado.AddModelError("StockMinimo","Escribe un número sin separadores de miles; puedes usar coma o punto decimal.");
             return new SolicitudProducto { Id=Id,Version=Version,Codigo=Codigo,Descripcion=Descripcion,CategoriaId=CategoriaId,MarcaId=MarcaId,
                 UnidadMedidaId=UnidadMedidaId,PermiteDecimales=PermiteDecimales,PrecioCompra=compra,PrecioVenta=venta,StockMinimo=minimo,Activo=Activo,
-                CodigosBarras=(CodigosBarras??"").Split(new[]{'\r','\n'},StringSplitOptions.RemoveEmptyEntries).Where(x=>!string.IsNullOrWhiteSpace(x)).ToList() };
+                CodigoBarra=CodigoBarra,GenerarCodigoBarras=GenerarCodigoBarras,PorcentajeIva=PorcentajeIva,IdNuevo=IdNuevo };
         }
         private static bool Numero(string texto,out decimal valor)
         { return decimal.TryParse((texto??"").Trim().Replace(',','.'),NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out valor); }
@@ -52,7 +59,8 @@ namespace SistemaVentas.Web.ViewModels
             return new ProductoFormulario { Id=p.Id,Version=p.Version,Codigo=p.Codigo,Descripcion=p.Descripcion,CategoriaId=p.CategoriaId,MarcaId=p.MarcaId,
                 UnidadMedidaId=p.UnidadMedidaId,PermiteDecimales=p.PermiteDecimales,PrecioCompra=p.PrecioCompra.ToString(CultureInfo.InvariantCulture),
                 PrecioVenta=p.PrecioVenta.ToString(CultureInfo.InvariantCulture),StockMinimo=p.StockMinimo.ToString(CultureInfo.InvariantCulture),
-                Activo=p.Activo,CodigosBarras=string.Join(Environment.NewLine,p.CodigosBarras),StockActual=p.StockActual };
+                Activo=p.Activo,CodigoBarra=p.CodigoBarra,GenerarCodigoBarras=p.GenerarCodigoBarras || string.IsNullOrEmpty(p.CodigoBarra),
+                PorcentajeIva=p.PorcentajeIva,StockActual=p.StockActual };
         }
     }
     public class ProductosListado

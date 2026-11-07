@@ -47,6 +47,16 @@ namespace SistemaVentas.Negocio
                 return producto==null?null:db.Historial(producto,Pagina(pagina));
             }
         }
+        public long ReservarNuevo(long actor)
+        {
+            using(var db=new ProductosRepositorio(cadena))
+            {
+                Exigir(db,actor,editar:true);db.PrepararEscritura();
+                long id=db.ReservarId();
+                Ean13.Generar(id); // Verificar capacidad antes de mostrar el formulario.
+                db.Confirmar();return id;
+            }
+        }
         public long Guardar(long actor,SolicitudProducto solicitud)
         {
             var p=Validar(solicitud);
@@ -61,6 +71,12 @@ namespace SistemaVentas.Negocio
                         (actual.StockActual!=0 || db.TieneHistorial(p.Id)))
                         throw new OperacionNoPermitidaException("Este producto ya tiene existencias o historial. Conserva su unidad de medida y su configuración de cantidades decimales.");
                 }
+                if(p.Id==0)
+                {
+                    if(p.IdNuevo==0) p.IdNuevo=db.ReservarId();
+                    if(db.Obtener(p.IdNuevo)!=null) throw new OperacionNoPermitidaException("Este producto ya fue guardado. Vuelve al listado antes de crear otro.");
+                }
+                if(p.GenerarCodigoBarras) p.CodigoBarra=Ean13.Generar(p.Id==0?p.IdNuevo:p.Id);
                 db.ValidarIdentificadores(p);
                 long id=db.Guardar(p);
                 db.Auditar(actor,p.Id==0?"PRODUCTO_CREADO":"PRODUCTO_EDITADO",id);
@@ -102,17 +118,17 @@ namespace SistemaVentas.Negocio
             var p=new SolicitudProducto { Id=entrada.Id,Version=entrada.Version,Codigo=Texto(entrada.Codigo,50,"El código"),
                 Descripcion=Texto(entrada.Descripcion,200,"La descripción"),CategoriaId=entrada.CategoriaId,MarcaId=entrada.MarcaId,
                 UnidadMedidaId=entrada.UnidadMedidaId,PermiteDecimales=entrada.PermiteDecimales,PrecioCompra=entrada.PrecioCompra,
-                PrecioVenta=entrada.PrecioVenta,StockMinimo=entrada.StockMinimo,Activo=entrada.Activo };
+                PrecioVenta=entrada.PrecioVenta,StockMinimo=entrada.StockMinimo,Activo=entrada.Activo,IdNuevo=entrada.IdNuevo,
+                PorcentajeIva=entrada.PorcentajeIva,GenerarCodigoBarras=entrada.GenerarCodigoBarras };
             Numero(p.PrecioCompra,99999999999999.9999m,4,"El precio de compra");
             Numero(p.PrecioVenta,9999999999999999.99m,2,"El precio de venta");
             Numero(p.StockMinimo,999999999999999.999m,3,"El stock mínimo");
             if(!p.PermiteDecimales && decimal.Truncate(p.StockMinimo)!=p.StockMinimo)
                 throw new OperacionNoPermitidaException("El stock mínimo debe ser entero si el producto no permite cantidades decimales.");
-            var barras=entrada.CodigosBarras??new List<string>();
-            if(barras.Count>50) throw new OperacionNoPermitidaException("Puedes registrar hasta 50 códigos de barras por producto.");
-            p.CodigosBarras=barras.Select(x=>Texto(x,100,"Cada código de barras")).ToList();
-            if(p.CodigosBarras.Distinct(StringComparer.Ordinal).Count()!=p.CodigosBarras.Count)
-                throw new OperacionNoPermitidaException("No repitas un código de barras dentro del mismo producto.");
+            if(p.PorcentajeIva!=0 && p.PorcentajeIva!=5 && p.PorcentajeIva!=10)
+                throw new OperacionNoPermitidaException("Selecciona el IVA del producto: Exento, 5 % o 10 %.");
+            if(p.IdNuevo<0) throw new OperacionNoPermitidaException("Abre Nuevo producto para obtener su número.");
+            p.CodigoBarra=p.GenerarCodigoBarras?null:Texto(entrada.CodigoBarra,100,"El código de barras");
             return p;
         }
     }

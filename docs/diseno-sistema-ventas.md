@@ -124,7 +124,7 @@ La regla de propiedad de la sesión se verifica además del permiso de caja.
 | Tabla | Campos principales y relaciones |
 | --- | --- |
 | `productos` | id, codigo único, descripcion, categoria_id, marca_id opcional, unidad_medida_id, permite_decimales, precio_compra, precio_venta, stock_actual, stock_minimo, activo. |
-| `productos_codigos_barras` | id, producto_id → productos, codigo de barras único como texto. Varios códigos por producto; se conservan los ceros iniciales. |
+| `productos_codigos_barras` | id, producto_id → productos, codigo de barras único como texto. Una sola barra por producto; la migración 008 aplica esa unicidad y se conservan los ceros iniciales. |
 | `movimientos_stock` | id, producto_id, usuario_id responsable, fecha, tipo, cantidad positiva, saldo_anterior, saldo_posterior, costo_unitario, observacion y referencia opcional al detalle de venta o compra. |
 
 `permite_decimales` pertenece al producto, de modo que incluso una unidad pueda
@@ -337,12 +337,12 @@ El recorrido de archivos, migración y validación está en
 El módulo usa las tablas, índices y permisos existentes, sin una nueva migración
 ni paquetes adicionales. Se distinguen `PRODUCTOS_VER`, `PRODUCTOS_EDITAR` y
 `STOCK_VER`. Código, descripción, categoría, marca opcional, unidad, precios,
-stock mínimo y múltiples barras se administran desde MVC. La existencia se
+stock mínimo, IVA incluido y una barra por producto se administran desde MVC. La existencia se
 consulta y no forma parte del contrato de escritura.
 
 Las cantidades y precios se validan como `decimal`, respetando las escalas
 numéricas del esquema. Las escrituras bloquean los catálogos antes del producto,
-comprueban `xmin`, sincronizan las barras y auditan en la misma transacción.
+comprueban `xmin`, guardan la barra única y auditan en la misma transacción.
 Un bloqueo transaccional serializa las escrituras del módulo para comprobar
 conflictos entre códigos internos y barras de distintos productos. Los índices
 únicos de PostgreSQL siguen protegiendo cada tipo de identificador por separado.
@@ -352,3 +352,18 @@ existencias o historial, incluso después de volver a saldo cero. Los movimiento
 se consultan con paginación y sin operaciones de edición. El recorrido de
 archivos, reglas y revisión en Windows está en
 [la guía de productos](etapa-4-2-productos.md).
+
+### Corrección de productos: IVA y EAN-13
+
+El usuario confirmó un código de barras por producto y precios con IVA incluido
+(Exento, 5 %, 10 %). La migración 008 conserva el IVA anterior como pendiente
+en lugar de asignar una tasa sin información. Una restricción única limita la
+tabla existente de barras a una fila por producto. Una FK diferida vincula la
+barra automática con la columna generada basada en su ID real.
+
+Nuevo producto es un POST con antifalsificación: reserva un ID de la secuencia
+y protege la reserva con MachineKey y el usuario actual. No inserta borradores
+ni usa MAX(id)+1; admite saltos al cancelar. Ean13.cs usa 28 + ID de 10 dígitos
+y control EAN-13. El servidor recalcula al guardar. Las futuras ventas/compras
+conservarán la tasa y su liquidación en cada detalle; editar la tasa del
+producto no debe recalcular documentos anteriores.

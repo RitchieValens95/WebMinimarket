@@ -134,9 +134,9 @@ BEGIN
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.productos'::regclass AND contype='p';
     IF cantidad <> 1 THEN RAISE EXCEPTION 'Cantidad de restricciones p inesperada en productos.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.productos'::regclass AND contype='f';
-    IF cantidad <> (CASE WHEN EXISTS (SELECT 1 FROM public.esquema_versiones WHERE version='006') THEN 5 ELSE 3 END) THEN RAISE EXCEPTION 'Cantidad de restricciones f inesperada en productos.'; END IF;
+    IF cantidad <> (CASE WHEN EXISTS (SELECT 1 FROM public.esquema_versiones WHERE version='008') THEN 6 WHEN EXISTS (SELECT 1 FROM public.esquema_versiones WHERE version='006') THEN 5 ELSE 3 END) THEN RAISE EXCEPTION 'Cantidad de restricciones f inesperada en productos.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.productos'::regclass AND contype='c';
-    IF cantidad <> 11 THEN RAISE EXCEPTION 'Cantidad de restricciones c inesperada en productos.'; END IF;
+    IF cantidad <> (CASE WHEN EXISTS(SELECT 1 FROM public.esquema_versiones WHERE version='008') THEN 12 ELSE 11 END) THEN RAISE EXCEPTION 'Cantidad de restricciones c inesperada en productos.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.productos'::regclass AND contype='u';
     IF cantidad <> 0 THEN RAISE EXCEPTION 'Cantidad de restricciones u inesperada en productos.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.productos_codigos_barras'::regclass AND contype='p';
@@ -146,7 +146,7 @@ BEGIN
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.productos_codigos_barras'::regclass AND contype='c';
     IF cantidad <> 1 THEN RAISE EXCEPTION 'Cantidad de restricciones c inesperada en productos_codigos_barras.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.productos_codigos_barras'::regclass AND contype='u';
-    IF cantidad <> 1 THEN RAISE EXCEPTION 'Cantidad de restricciones u inesperada en productos_codigos_barras.'; END IF;
+    IF cantidad <> (CASE WHEN EXISTS(SELECT 1 FROM public.esquema_versiones WHERE version='008') THEN 3 ELSE 1 END) THEN RAISE EXCEPTION 'Cantidad de restricciones u inesperada en productos_codigos_barras.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.cajas'::regclass AND contype='p';
     IF cantidad <> 1 THEN RAISE EXCEPTION 'Cantidad de restricciones p inesperada en cajas.'; END IF;
     SELECT count(*) INTO cantidad FROM pg_catalog.pg_constraint WHERE conrelid='public.cajas'::regclass AND contype='f';

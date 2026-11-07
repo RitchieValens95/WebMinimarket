@@ -6,6 +6,8 @@
 @Html.AntiForgeryToken()
 @Html.HiddenFor(m=>m.Id)
 @Html.HiddenFor(m=>m.Version)
+@Html.HiddenFor(m=>m.Reserva)
+<div class="col-12"><span class="badge bg-secondary">Producto N.º @(Model.Id==0?Model.IdNuevo:Model.Id)</span></div>
 <div class="col-12">@Html.ValidationSummary(false,"",new{@class="text-danger",role="alert"})</div>
 <div class="col-md-4">@Html.LabelFor(m=>m.Codigo,new{@class="form-label"})
 @Html.TextBoxFor(m=>m.Codigo,new{@class="form-control",maxlength="50",required="required",autocomplete="off"})</div>
@@ -28,11 +30,20 @@
 @Html.LabelFor(m=>m.PermiteDecimales,new{@class="form-check-label"})</div></div>
 <div class="col-md-6"><div class="form-check">@Html.CheckBoxFor(m=>m.Activo,new{@class="form-check-input"})
 @Html.LabelFor(m=>m.Activo,new{@class="form-check-label"})</div></div>
-<div class="col-md-7">@Html.LabelFor(m=>m.CodigosBarras,new{@class="form-label"})
-@Html.TextAreaFor(m=>m.CodigosBarras,new{@class="form-control",rows="5",maxlength="5100",spellcheck="false"})
-<small>Hasta 50 códigos de 100 caracteres cada uno. Se conservan los ceros iniciales.</small></div>
+<div class="col-md-7">
+<div class="mb-3">@Html.LabelFor(m=>m.PorcentajeIva,new{@class="form-label"})
+@Html.DropDownListFor(m=>m.PorcentajeIva,new SelectList(new[]{new{Valor=0,Texto="Exento (0 %)"},new{Valor=5,Texto="5 %"},new{Valor=10,Texto="10 %"}},"Valor","Texto"),"Selecciona el IVA",new{@class="form-select",required="required"})
+<small>Los precios de compra y venta ya incluyen este IVA.</small></div>
+<div class="form-check mb-2">@Html.CheckBoxFor(m=>m.GenerarCodigoBarras,new{@class="form-check-input"})
+@Html.LabelFor(m=>m.GenerarCodigoBarras,new{@class="form-check-label"})</div>
+@Html.LabelFor(m=>m.CodigoBarra,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.CodigoBarra,new{@class="form-control",maxlength="100",autocomplete="off",data_ean13=Model.CodigoGenerado,aria_describedby="ayuda-barra"})
+<small id="ayuda-barra">Un solo código por producto. Al marcar la casilla se genera automáticamente su EAN-13.</small>
+</div>
 <div class="col-md-5"><div class="alert alert-info h-100 mb-0">Existencia actual: <strong>@Model.StockActual.ToString("0.###",CultureInfo.GetCultureInfo("es-PY"))</strong>.<br />
 Las existencias cambian mediante compras, ventas o ajustes. Si ya hay historial, conserva la unidad y la opción de cantidades decimales.</div></div>
 <div class="col-12"><button class="btn btn-primary" type="submit">Guardar producto</button>
 <a class="btn btn-outline-secondary" href="@Url.Action("Index")">Volver al listado</a></div>
 }
+
+<script src="@Url.Content("~/Scripts/ProductoFormulario.js")"></script>

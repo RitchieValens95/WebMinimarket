@@ -13,9 +13,9 @@
 <dt class="col-sm-4">Precio de venta</dt><dd class="col-sm-8">@Model.PrecioVenta.ToString("N2",cultura)</dd>
 <dt class="col-sm-4">Existencia actual / mínimo</dt><dd class="col-sm-8">@Model.StockActual.ToString("0.###",cultura) / @Model.StockMinimo.ToString("0.###",cultura) @Model.UnidadMedida</dd>
 <dt class="col-sm-4">Estado</dt><dd class="col-sm-8">@(Model.Activo?"Activo":"Inactivo")</dd>
-<dt class="col-sm-4">Códigos de barras</dt><dd class="col-sm-8">
-@if(Model.CodigosBarras.Count==0) { <span>Sin códigos de barras.</span> }
-else { <ul class="mb-0">@foreach(var barra in Model.CodigosBarras) { <li><code>@barra</code></li> }</ul> }
+<dt class="col-sm-4">IVA incluido</dt><dd class="col-sm-8">@(Model.PorcentajeIva.HasValue?(Model.PorcentajeIva.Value==0?"Exento (0 %)":Model.PorcentajeIva.Value+" %"):"Pendiente de seleccionar")</dd>
+<dt class="col-sm-4">Código de barras</dt><dd class="col-sm-8"><code>@Model.CodigoBarra</code>
+@if(Model.GenerarCodigoBarras) { <span class="badge bg-secondary">EAN-13 generado</span> }
 </dd></dl>
 @if(usuario.Puede("PRODUCTOS_EDITAR")) { <a class="btn btn-primary" href="@Url.Action("Editar",new{id=Model.Id})">Editar</a> }
 @if(usuario.Puede("STOCK_VER")) { <a class="btn btn-outline-primary" href="@Url.Action("Movimientos",new{id=Model.Id})">Movimientos de stock</a> }

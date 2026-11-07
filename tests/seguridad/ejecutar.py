@@ -158,6 +158,31 @@ def main():
                 result = sql(changed, required=False)
                 if result.returncode == 0 or "Checksum diferente" not in result.stderr:
                     raise RuntimeError("No se detectó el cambio de checksum de 006")
+            if args.productos:
+                sql("INSERT INTO productos(codigo,descripcion,categoria_id,unidad_medida_id,precio_compra,precio_venta) SELECT 'LEGADO','Producto anterior',c.id,u.id,90,123.45 FROM categorias c CROSS JOIN unidades_medida u WHERE c.nombre='General' AND u.codigo='UN'; "
+                    "INSERT INTO productos_codigos_barras(producto_id,codigo) SELECT id,'LEGADO-BARRA' FROM productos WHERE codigo='LEGADO'; "
+                    "INSERT INTO productos_codigos_barras(producto_id,codigo) SELECT id,'LEGADO-SEGUNDA' FROM productos WHERE codigo='LEGADO';")
+                migration = (ROOT / "database/008_producto_iva_ean13.sql").read_text(encoding="utf-8-sig")
+                failed = sql(migration, required=False)
+                if failed.returncode == 0 or "más de un código" not in failed.stderr:
+                    raise RuntimeError("008 no rechazó un producto con varias barras")
+                if sql("SELECT count(*) FROM productos_codigos_barras WHERE codigo IN ('LEGADO-BARRA','LEGADO-SEGUNDA');").stdout.strip() != "2":
+                    raise RuntimeError("008 borró barras anteriores al fallar")
+                if sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='productos' AND column_name='porcentaje_iva';").stdout.strip() != "0":
+                    raise RuntimeError("008 dejó DDL parcial tras fallar")
+                # Solo en la base temporal, se simula la elección del usuario.
+                sql("DELETE FROM productos_codigos_barras WHERE codigo='LEGADO-SEGUNDA';")
+                for filename in ("008_producto_iva_ean13.sql", "008_producto_iva_ean13.sql", "009_comprobar_producto_iva_ean13.sql", "003_comprobar_estructura.sql"):
+                    sql((ROOT / "database" / filename).read_text(encoding="utf-8-sig"))
+                    print("OK SQL",filename,flush=True)
+                changed=migration.replace("-- El IVA anterior", "-- cambio de prueba\n-- El IVA anterior",1)
+                failed=sql(changed,required=False)
+                if failed.returncode==0 or "Checksum diferente" not in failed.stderr:
+                    raise RuntimeError("No se detectó el cambio de checksum de 008")
+            if args.catalogos:
+                for filename in ("008_producto_iva_ean13.sql","009_comprobar_producto_iva_ean13.sql"):
+                    sql((ROOT / "database" / filename).read_text(encoding="utf-8-sig"))
+                    print("OK SQL",filename,flush=True)
             connection = work / "cliente.env"
             connection.write_text("SV_TEST_CONNECTION=Host=127.0.0.1;Port=5432;Database=seguridad;Username=sistemaventas_app;Password=" + credential + "\n")
             connection.chmod(0o600)
@@ -174,6 +199,8 @@ def main():
             if args.catalogos or args.productos:
                 sql((ROOT / "database/007_comprobar_catalogos.sql").read_text(encoding="utf-8-sig"))
                 sql((ROOT / "database/003_comprobar_estructura.sql").read_text(encoding="utf-8-sig"))
+            if args.productos or args.catalogos:
+                sql((ROOT / "database/009_comprobar_producto_iva_ean13.sql").read_text(encoding="utf-8-sig"))
         finally:
             if started:
                 result = docker("rm", "-f", name)

@@ -19,10 +19,15 @@ con ADO.NET/Npgsql.
 La base técnica, la conexión y el esquema de la etapa 2 se validaron en Windows.
 El acceso como administrador de la etapa 3 se comprobó en Windows y la etapa
 4.1 de categorías y marcas fue revisada por el usuario. La etapa 4.2 incorpora
-productos, códigos de barras y consulta de movimientos, con pruebas sobre
+productos, barra única, IVA y consulta de movimientos, con pruebas sobre
 PostgreSQL temporal y pendiente del recorrido bajo IIS Express. Clientes,
 proveedores, POS, compras, caja y reportes siguen las siguientes entregas.
 
 La ejecución de la aplicación requiere Windows y las herramientas de desarrollo
 de .NET Framework 4.8. El SDK de .NET moderno no sustituye ese entorno. La
 configuración privada de conexión permanece excluida de Git.
+
+La corrección de productos incorpora IVA incluido (Exento, 5 %, 10 %) y EAN-13
+interno con prefijo 28 cuando no hay barra de fabricante. Requiere aplicar
+`database/008_producto_iva_ean13.sql` y verificar con
+`database/009_comprobar_producto_iva_ean13.sql`; los pasos están en la guía 4.2.
