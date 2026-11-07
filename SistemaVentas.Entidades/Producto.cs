@@ -29,8 +29,10 @@ namespace SistemaVentas.Entidades
     {
         public bool EsUnitario { get; set; }
         public long Plu { get; set; }
-        // Campo variable de cinco dígitos, sin suponer aún el factor de la balanza.
+        // Se conservan los cinco dígitos y la cantidad interpretada en kg o unidades.
         public string ValorCodificado { get; set; }
+        public decimal Cantidad { get; set; }
+        public string UnidadLectura { get { return EsUnitario?"unidades":"kg"; } }
         public string Prefijo { get; set; }
     }
 

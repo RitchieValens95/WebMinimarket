@@ -270,6 +270,12 @@ internal static class ProductosPruebas
                     if(reader.GetString(1)!=CodigoBalanza.Prefijo(reader.GetInt32(0),false) || reader.GetString(2)!=CodigoBalanza.Prefijo(reader.GetInt32(0),true)) throw new Exception("SQL y C# difieren en balanza");
             }
             Comprobar(true,"SQL y C# coinciden para 1000 PLU en ambos modos de balanza");
+            Comprobar(lecturaPeso.Cantidad==0.250m && lecturaPeso.UnidadLectura=="kg","Bandera 20: 00250 gramos se interpreta como 0,250 kg");
+            Comprobar(lecturaUnidad.Cantidad==3m && lecturaUnidad.UnidadLectura=="unidades","Bandera 21: 00003 se interpreta como 3 unidades enteras");
+            Comprobar(CodigoBalanza.Leer(CodigoBalanza.Etiqueta(3,false,1)).Cantidad==0.001m,"Un gramo conserva precisión decimal de 0,001 kg");
+            Comprobar(CodigoBalanza.Leer(CodigoBalanza.Etiqueta(3,false,1000)).Cantidad==1m,"01000 gramos se interpreta como 1 kg");
+            Comprobar(CodigoBalanza.Leer(CodigoBalanza.Etiqueta(5,true,1000)).Cantidad==1000m,"01000 en bandera 21 conserva 1000 unidades, sin dividir");
+            Comprobar(CodigoBalanza.Leer(CodigoBalanza.Etiqueta(3,false,99999)).Cantidad==99.999m,"Cinco dígitos de gramos admiten hasta 99,999 kg sin redondear");
             Console.WriteLine("TOTAL: "+cantidad+" comprobaciones de productos correctas.");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e.GetType().Name+": "+e.Message);return 1;}

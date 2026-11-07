@@ -377,8 +377,10 @@ completa es bandera 2 + PLU 5 + peso/cantidad codificado 5 + control EAN-13 1.
 El campo variable no se guarda como parte del identificador del producto.
 
 `CodigoBalanza.cs` separa los campos y valida el control antes de usar la
-identificación fija para buscar. El lector conserva los cinco dígitos variables
-sin asignarles una escala aún; en el POS habrá que definir la equivalencia
-configurada en la balanza y validar cantidades antes de registrar la venta.
+identificación fija para buscar. El lector conserva los cinco dígitos originales y, según la configuración
+confirmada por el usuario, interpreta bandera 20 como gramos/1000 en kg y
+bandera 21 como unidades enteras. La cantidad usa decimal y se expone junto
+con su unidad de lectura. En el POS se validarán las cantidades y su coherencia
+con el producto antes de registrar la venta.
 Las casillas no cambian unidad, decimales ni stock. La relación diferida de
 010 impide guardar una barra generada que no corresponda a su ID y tipo.

@@ -22,7 +22,11 @@ namespace SistemaVentas.Negocio
             if(!Ean13.EsValido(etiqueta) || (!etiqueta.StartsWith("20") && !etiqueta.StartsWith("21"))) return null;
             long plu=long.Parse(etiqueta.Substring(2,5),CultureInfo.InvariantCulture);
             if(plu==0) return null;
-            return new LecturaBalanza { Plu=plu,EsUnitario=etiqueta.StartsWith("21"),Prefijo=etiqueta.Substring(0,7),ValorCodificado=etiqueta.Substring(7,5) };
+            bool unitario=etiqueta.StartsWith("21");
+            string variable=etiqueta.Substring(7,5);
+            decimal valor=decimal.Parse(variable,CultureInfo.InvariantCulture);
+            return new LecturaBalanza { Plu=plu,EsUnitario=unitario,Prefijo=etiqueta.Substring(0,7),
+                ValorCodificado=variable,Cantidad=unitario?valor:valor/1000m };
         }
     }
 }

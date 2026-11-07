@@ -132,9 +132,17 @@ cantidad de esa etiqueta. Ejemplos de composición:
 ```
 
 `CodigoBalanza.cs` construye y separa esos campos y reutiliza el cálculo de
-control de `Ean13.cs`. Conserva el campo variable como cinco dígitos; no supone
-si representa gramos u otra escala decimal. Esa equivalencia se confirmará con
-la configuración de la balanza antes de aplicar cantidades en el POS.
+control de `Ean13.cs`. El usuario confirmó la equivalencia: con bandera **20**,
+los cinco dígitos representan **gramos** y se dividen entre 1000 para obtener
+kilogramos; `00250` representa `0,250 kg`, `01000` representa `1 kg` y `00001`
+representa `0,001 kg`. Con bandera **21**, representan **unidades enteras**;
+`00003` representa `3 unidades` y `01000` representa `1000 unidades`.
+`LecturaBalanza` conserva el campo original y expone `Cantidad` como decimal y
+`UnidadLectura`. Este cálculo no modifica existencias ni registra ventas; el
+POS usará la cantidad interpretada cuando se implemente. Las validaciones de
+cantidad positiva y coherencia con la unidad del producto se aplicarán al
+confirmar esa operación. La interpretación no necesita otra migración después
+de 010/011.
 
 La búsqueda de Productos acepta tanto la identificación fija de siete dígitos
 como una etiqueta completa con bandera y control válidos. El modo de la ficha
@@ -345,6 +353,9 @@ distinto y revierte por completo si existen varias barras por producto.
 
 La ampliación de balanza pasó **119 comprobaciones de productos**, **60 de
 catálogos** y **58 de seguridad**, con los cuatro proyectos y 15 vistas compilados.
+
+La confirmación de gramos y unidades agregó seis casos y dejó **125
+comprobaciones de productos correctas**, sin cambiar el esquema SQL.
 
 Las opciones de balanza añaden pruebas de modo, persistencia, límites del PLU,
 composición y lectura 2+5+5+1 y búsqueda por etiqueta completa.
