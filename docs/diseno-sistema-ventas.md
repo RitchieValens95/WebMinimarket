@@ -331,3 +331,24 @@ originales y los productos inactivos. La edición comprueba `xmin` para detectar
 formularios obsoletos. No hay borrado físico ni cambios de stock en esta entrega.
 El recorrido de archivos, migración y validación está en
 [la guía de la etapa 4.1](etapa-4-1-catalogos.md).
+
+## Etapa 4.2: productos
+
+El módulo usa las tablas, índices y permisos existentes, sin una nueva migración
+ni paquetes adicionales. Se distinguen `PRODUCTOS_VER`, `PRODUCTOS_EDITAR` y
+`STOCK_VER`. Código, descripción, categoría, marca opcional, unidad, precios,
+stock mínimo y múltiples barras se administran desde MVC. La existencia se
+consulta y no forma parte del contrato de escritura.
+
+Las cantidades y precios se validan como `decimal`, respetando las escalas
+numéricas del esquema. Las escrituras bloquean los catálogos antes del producto,
+comprueban `xmin`, sincronizan las barras y auditan en la misma transacción.
+Un bloqueo transaccional serializa las escrituras del módulo para comprobar
+conflictos entre códigos internos y barras de distintos productos. Los índices
+únicos de PostgreSQL siguen protegiendo cada tipo de identificador por separado.
+
+La unidad y el indicador de cantidades decimales se conservan cuando hay
+existencias o historial, incluso después de volver a saldo cero. Los movimientos
+se consultan con paginación y sin operaciones de edición. El recorrido de
+archivos, reglas y revisión en Windows está en
+[la guía de productos](etapa-4-2-productos.md).

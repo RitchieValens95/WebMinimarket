@@ -16,6 +16,8 @@ namespace SistemaVentas.Web
             routes.MapRoute("Categorias", "Categorias/{action}/{id}", new { controller = "Categorias", action = "Index", id = UrlParameter.Optional });
             routes.MapRoute("Marcas", "Marcas/{action}/{id}", new { controller = "Marcas", action = "Index", id = UrlParameter.Optional });
 
+            routes.MapRoute("Productos", "Productos/{action}/{id}", new { controller = "Productos", action = "Index", id = UrlParameter.Optional });
+
             // MVC atiende el inicio antes de que FriendlyUrls busque una página .aspx.
             routes.MapRoute(
                 name: "InicioMvc",

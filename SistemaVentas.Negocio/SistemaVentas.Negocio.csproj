@@ -65,4 +65,7 @@
     <Compile Include="ServicioCategorias.cs" />
     <Compile Include="ServicioMarcas.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ServicioProductos.cs" />
+  </ItemGroup>
 </Project>

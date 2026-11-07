@@ -388,4 +388,12 @@
     <Content Include="Views\Catalogos\Formulario.cshtml" />
     <Content Include="Views\Catalogos\Index.cshtml" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controllers\ProductosController.cs" />
+    <Compile Include="ViewModels\ProductoModelos.cs" />
+    <Content Include="Views\Productos\Detalle.cshtml" />
+    <Content Include="Views\Productos\Formulario.cshtml" />
+    <Content Include="Views\Productos\Index.cshtml" />
+    <Content Include="Views\Productos\Movimientos.cshtml" />
+  </ItemGroup>
 </Project>

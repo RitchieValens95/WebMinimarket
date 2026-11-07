@@ -60,4 +60,7 @@
     <Compile Include="Marca.cs" />
     <Compile Include="RegistroCatalogo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Producto.cs" />
+  </ItemGroup>
 </Project>

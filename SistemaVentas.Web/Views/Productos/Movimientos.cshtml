@@ -1,0 +1,21 @@
+﻿@model SistemaVentas.Entidades.HistorialProducto
+@using System.Globalization
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title="Movimientos de stock";var cultura=CultureInfo.GetCultureInfo("es-PY"); }
+<h1 class="h2">Movimientos de stock</h1>
+<p><strong>@Model.Producto.Codigo — @Model.Producto.Descripcion</strong><br />
+Existencia actual: @Model.Producto.StockActual.ToString("0.###",cultura) @Model.Producto.UnidadMedida</p>
+<div class="table-responsive bg-white border rounded"><table class="table table-striped align-middle mb-0">
+<thead><tr><th scope="col">Fecha (Paraguay)</th><th scope="col">Tipo</th><th scope="col">Cantidad</th><th scope="col">Saldo anterior</th><th scope="col">Saldo posterior</th><th scope="col">Costo unitario</th><th scope="col">Usuario / observación</th></tr></thead><tbody>
+@foreach(var m in Model.Movimientos) {
+<tr><td>@HoraParaguay.Mostrar(m.Fecha)</td><td>@m.TipoDescripcion</td><td>@m.Cantidad.ToString("0.###",cultura)</td><td>@m.SaldoAnterior.ToString("0.###",cultura)</td>
+<td>@m.SaldoPosterior.ToString("0.###",cultura)</td><td>@m.CostoUnitario.ToString("N4",cultura)</td><td>@m.Usuario<br />@m.Observacion</td></tr>
+}
+@if(Model.Movimientos.Count==0) { <tr><td colspan="7" class="text-center py-4">Este producto todavía no tiene movimientos de stock.</td></tr> }
+</tbody></table></div>
+<nav class="d-flex align-items-center gap-3 my-3" aria-label="Paginación de movimientos">
+@if(Model.Pagina>1) { <a href="@Url.Action("Movimientos",new{id=Model.Producto.Id,pagina=Model.Pagina-1})">Anterior</a> }
+<span>Página @Model.Pagina de @Math.Max(1,(Model.Total+19)/20) · @Model.Total movimiento(s)</span>
+@if((long)Model.Pagina*20<Model.Total) { <a href="@Url.Action("Movimientos",new{id=Model.Producto.Id,pagina=Model.Pagina+1})">Siguiente</a> }
+</nav>
+<a class="btn btn-outline-secondary" href="@Url.Action("Detalle",new{id=Model.Producto.Id})">Volver al producto</a>

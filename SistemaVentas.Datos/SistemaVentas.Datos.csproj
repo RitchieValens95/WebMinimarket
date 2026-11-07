@@ -100,4 +100,7 @@
     <Compile Include="MarcasRepositorio.cs" />
     <Compile Include="RepositorioCatalogo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ProductosRepositorio.cs" />
+  </ItemGroup>
 </Project>

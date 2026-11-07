@@ -1,0 +1,22 @@
+﻿@model SistemaVentas.Entidades.Producto
+@using System.Globalization
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title=Model.Descripcion; var cultura=CultureInfo.GetCultureInfo("es-PY");var usuario=SeguridadWeb.Usuario(Context); }
+<h1 class="h2">@Model.Descripcion</h1>
+<dl class="row bg-white border rounded p-3">
+<dt class="col-sm-4">Código interno</dt><dd class="col-sm-8">@Model.Codigo</dd>
+<dt class="col-sm-4">Categoría</dt><dd class="col-sm-8">@Model.Categoria</dd>
+<dt class="col-sm-4">Marca</dt><dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Marca)?"Sin marca":Model.Marca)</dd>
+<dt class="col-sm-4">Unidad de medida</dt><dd class="col-sm-8">@Model.UnidadMedida</dd>
+<dt class="col-sm-4">Permite cantidades decimales</dt><dd class="col-sm-8">@(Model.PermiteDecimales?"Sí":"No")</dd>
+<dt class="col-sm-4">Precio de compra</dt><dd class="col-sm-8">@Model.PrecioCompra.ToString("N4",cultura)</dd>
+<dt class="col-sm-4">Precio de venta</dt><dd class="col-sm-8">@Model.PrecioVenta.ToString("N2",cultura)</dd>
+<dt class="col-sm-4">Existencia actual / mínimo</dt><dd class="col-sm-8">@Model.StockActual.ToString("0.###",cultura) / @Model.StockMinimo.ToString("0.###",cultura) @Model.UnidadMedida</dd>
+<dt class="col-sm-4">Estado</dt><dd class="col-sm-8">@(Model.Activo?"Activo":"Inactivo")</dd>
+<dt class="col-sm-4">Códigos de barras</dt><dd class="col-sm-8">
+@if(Model.CodigosBarras.Count==0) { <span>Sin códigos de barras.</span> }
+else { <ul class="mb-0">@foreach(var barra in Model.CodigosBarras) { <li><code>@barra</code></li> }</ul> }
+</dd></dl>
+@if(usuario.Puede("PRODUCTOS_EDITAR")) { <a class="btn btn-primary" href="@Url.Action("Editar",new{id=Model.Id})">Editar</a> }
+@if(usuario.Puede("STOCK_VER")) { <a class="btn btn-outline-primary" href="@Url.Action("Movimientos",new{id=Model.Id})">Movimientos de stock</a> }
+<a class="btn btn-outline-secondary" href="@Url.Action("Index")">Volver al listado</a>

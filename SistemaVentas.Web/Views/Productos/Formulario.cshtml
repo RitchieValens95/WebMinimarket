@@ -1,0 +1,38 @@
+﻿@model SistemaVentas.Web.ViewModels.ProductoFormulario
+@using System.Globalization
+@{ ViewBag.Title=Model.Id==0?"Nuevo producto":"Editar producto"; }
+<h1 class="h2">@ViewBag.Title</h1>
+@using(Html.BeginForm("Guardar","Productos",FormMethod.Post,new{@class="row g-3"})) {
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m=>m.Id)
+@Html.HiddenFor(m=>m.Version)
+<div class="col-12">@Html.ValidationSummary(false,"",new{@class="text-danger",role="alert"})</div>
+<div class="col-md-4">@Html.LabelFor(m=>m.Codigo,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Codigo,new{@class="form-control",maxlength="50",required="required",autocomplete="off"})</div>
+<div class="col-md-8">@Html.LabelFor(m=>m.Descripcion,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Descripcion,new{@class="form-control",maxlength="200",required="required"})</div>
+<div class="col-md-4">@Html.LabelFor(m=>m.CategoriaId,new{@class="form-label"})
+@Html.DropDownListFor(m=>m.CategoriaId,new SelectList(Model.Opciones.Categorias,"Id","Nombre"),"Selecciona una categoría",new{@class="form-select",required="required"})</div>
+<div class="col-md-4">@Html.LabelFor(m=>m.MarcaId,new{@class="form-label"})
+@Html.DropDownListFor(m=>m.MarcaId,new SelectList(Model.Opciones.Marcas,"Id","Nombre"),"Sin marca",new{@class="form-select"})</div>
+<div class="col-md-4">@Html.LabelFor(m=>m.UnidadMedidaId,new{@class="form-label"})
+@Html.DropDownListFor(m=>m.UnidadMedidaId,new SelectList(Model.Opciones.Unidades,"Id","Nombre"),"Selecciona una unidad",new{@class="form-select",required="required"})</div>
+<div class="col-md-4">@Html.LabelFor(m=>m.PrecioCompra,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.PrecioCompra,new{@class="form-control",inputmode="decimal",maxlength="32",required="required",aria_describedby="ayuda-numeros"})<small>Hasta 4 decimales.</small></div>
+<div class="col-md-4">@Html.LabelFor(m=>m.PrecioVenta,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.PrecioVenta,new{@class="form-control",inputmode="decimal",maxlength="32",required="required",aria_describedby="ayuda-numeros"})<small>Hasta 2 decimales.</small></div>
+<div class="col-md-4">@Html.LabelFor(m=>m.StockMinimo,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.StockMinimo,new{@class="form-control",inputmode="decimal",maxlength="32",required="required",aria_describedby="ayuda-numeros"})<small>Hasta 3 decimales si permite cantidades decimales.</small></div>
+<div class="col-12"><p id="ayuda-numeros" class="text-muted mb-0">Escribe los números sin separadores de miles. Puedes usar coma o punto decimal, por ejemplo 0,250.</p></div>
+<div class="col-md-6"><div class="form-check">@Html.CheckBoxFor(m=>m.PermiteDecimales,new{@class="form-check-input"})
+@Html.LabelFor(m=>m.PermiteDecimales,new{@class="form-check-label"})</div></div>
+<div class="col-md-6"><div class="form-check">@Html.CheckBoxFor(m=>m.Activo,new{@class="form-check-input"})
+@Html.LabelFor(m=>m.Activo,new{@class="form-check-label"})</div></div>
+<div class="col-md-7">@Html.LabelFor(m=>m.CodigosBarras,new{@class="form-label"})
+@Html.TextAreaFor(m=>m.CodigosBarras,new{@class="form-control",rows="5",maxlength="5100",spellcheck="false"})
+<small>Hasta 50 códigos de 100 caracteres cada uno. Se conservan los ceros iniciales.</small></div>
+<div class="col-md-5"><div class="alert alert-info h-100 mb-0">Existencia actual: <strong>@Model.StockActual.ToString("0.###",CultureInfo.GetCultureInfo("es-PY"))</strong>.<br />
+Las existencias cambian mediante compras, ventas o ajustes. Si ya hay historial, conserva la unidad y la opción de cantidades decimales.</div></div>
+<div class="col-12"><button class="btn btn-primary" type="submit">Guardar producto</button>
+<a class="btn btn-outline-secondary" href="@Url.Action("Index")">Volver al listado</a></div>
+}
