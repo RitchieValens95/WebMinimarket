@@ -231,6 +231,45 @@ internal static class ProductosPruebas
             Denegado(()=>ReservaNuevoProducto.Leer(token,cajero),"La reserva no se puede copiar a otro usuario");
             Denegado(()=>ReservaNuevoProducto.Leer("alterado",admin),"Reserva alterada rechazada");
             Comprobar(!bind.Include.Contains("IdNuevo"),"El id reservado no se acepta como un campo modificable por el navegador");
+            Comprobar(CodigoBalanza.Prefijo(3,false)=="2000003" && CodigoBalanza.Prefijo(5,true)=="2100005","Ejemplos de bandera y PLU de siete dígitos");
+            Comprobar(CodigoBalanza.Etiqueta(3,false,250)=="2000003002504" && CodigoBalanza.Etiqueta(5,true,3)=="2100005000031","Etiquetas completas: bandera 2 + PLU 5 + valor 5 + control 1");
+            var lecturaPeso=CodigoBalanza.Leer("2000003002504");var lecturaUnidad=CodigoBalanza.Leer("2100005000031");
+            Comprobar(lecturaPeso.Plu==3 && !lecturaPeso.EsUnitario && lecturaPeso.ValorCodificado=="00250" && lecturaUnidad.Plu==5 && lecturaUnidad.EsUnitario && lecturaUnidad.ValorCodificado=="00003","Lectura conserva los cinco dígitos variables sin cambiar la identificación fija");
+            Comprobar(CodigoBalanza.Leer("2000003002505")==null && CodigoBalanza.Leer("2000003")==null && CodigoBalanza.Leer(Ean13.Generar(36))==null,"Solo interpreta etiquetas completas con bandera y control válidos");
+            Denegado(()=>CodigoBalanza.Prefijo(100000,false),"PLU mayor a cinco dígitos no se trunca");
+            Denegado(()=>CodigoBalanza.Prefijo(0,true),"PLU cero rechazado");
+            Denegado(()=>CodigoBalanza.Etiqueta(3,false,100000),"Peso o cantidad no desborda los cinco dígitos");
+            Comprobar(CodigoBalanza.Prefijo(99999,true)=="2199999","Último PLU admitido conserva cinco dígitos");
+            var pesable=Nuevo("BALANZA-PESO");pesable.GenerarCodigoBarras=false;pesable.BalanzaPesable=true;pesable.PermiteDecimales=true;pesable.CodigoBarra="MANIPULADO";
+            long pesoId=productos.Guardar(admin,pesable);var pesoGuardado=productos.Obtener(admin,pesoId);
+            Comprobar(pesoGuardado.BalanzaPesable && !pesoGuardado.BalanzaUnitario && !pesoGuardado.GenerarCodigoBarras && pesoGuardado.CodigoBarra==CodigoBalanza.Prefijo(pesoId,false),"Guarda pesable y recalcula el prefijo a partir del ID real");
+            var unitario=Nuevo("BALANZA-UNIDAD");unitario.GenerarCodigoBarras=false;unitario.BalanzaUnitario=true;
+            long unidadId=productos.Guardar(admin,unitario);var unidadGuardada=productos.Obtener(admin,unidadId);
+            Comprobar(unidadGuardada.BalanzaUnitario && !unidadGuardada.BalanzaPesable && unidadGuardada.CodigoBarra==CodigoBalanza.Prefijo(unidadId,true),"Guarda tipo unitario y código de bandera 21");
+            string etiquetaPeso=CodigoBalanza.Etiqueta(pesoId,false,250);string etiquetaUnidad=CodigoBalanza.Etiqueta(unidadId,true,3);
+            Comprobar(productos.Listar(admin,new FiltroProductos{Busqueda=etiquetaPeso}).Registros.Single().Id==pesoId,"Busca pesable con una etiqueta completa de peso variable");
+            Comprobar(productos.Listar(admin,new FiltroProductos{Busqueda=etiquetaUnidad}).Registros.Single().Id==unidadId,"Busca unitario con una etiqueta completa de cantidad variable");
+            Comprobar(productos.Listar(admin,new FiltroProductos{Busqueda=CodigoBalanza.Prefijo(pesoId,false)}).Registros.Single().Id==pesoId,"También busca la identificación fija de siete dígitos");
+            var incompatible=Nuevo("DOS-TIPOS");incompatible.BalanzaPesable=true;Denegado(()=>productos.Guardar(admin,incompatible),"EAN-13 y balanza a la vez rechazados");
+            incompatible.GenerarCodigoBarras=false;incompatible.BalanzaUnitario=true;Denegado(()=>productos.Guardar(admin,incompatible),"Pesable y unitario a la vez rechazados");
+            bool tiposRechazados=false;
+            try{Sql("UPDATE productos SET balanza_unitario=true WHERE id=@id","id",pesoId);}catch(PostgresException e)when(e.SqlState=="23514"){tiposRechazados=true;}
+            Comprobar(tiposRechazados,"PostgreSQL también impide marcar tipos incompatibles");
+            bool barraRechazada=false;
+            try{Sql("UPDATE productos_codigos_barras SET codigo='2000000' WHERE producto_id=@id","id",pesoId);}catch(PostgresException e)when(e.SqlState=="23503"){barraRechazada=true;}
+            Comprobar(barraRechazada,"La base rechaza un prefijo de balanza que no corresponde al ID");
+            var editarBalanza=ProductoFormulario.Desde(pesoGuardado);
+            Comprobar(editarBalanza.BalanzaPesable && !editarBalanza.BalanzaUnitario && !editarBalanza.GenerarCodigoBarras,"Editar restaura las casillas de balanza persistidas");
+            pesoGuardado.BalanzaPesable=false;pesoGuardado.GenerarCodigoBarras=true;productos.Guardar(admin,pesoGuardado);
+            var convertido=productos.Obtener(admin,pesoId);
+            Comprobar(convertido.CodigoBarra==Ean13.Generar(pesoId) && !convertido.BalanzaPesable && convertido.PorcentajeIva==10 && convertido.StockActual==0,"Cambiar formato conserva IVA, precios y stock");
+            using(var c=new NpgsqlConnection(cadena))
+            {
+                c.Open();using(var cmd=new NpgsqlCommand("SELECT n,sv_codigo_balanza(n,false),sv_codigo_balanza(n,true) FROM generate_series(1,1000) n",c))
+                using(var reader=cmd.ExecuteReader()) while(reader.Read())
+                    if(reader.GetString(1)!=CodigoBalanza.Prefijo(reader.GetInt32(0),false) || reader.GetString(2)!=CodigoBalanza.Prefijo(reader.GetInt32(0),true)) throw new Exception("SQL y C# difieren en balanza");
+            }
+            Comprobar(true,"SQL y C# coinciden para 1000 PLU en ambos modos de balanza");
             Console.WriteLine("TOTAL: "+cantidad+" comprobaciones de productos correctas.");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e.GetType().Name+": "+e.Message);return 1;}

@@ -11,6 +11,14 @@ namespace SistemaVentas.Negocio
             if(idProducto<1 || idProducto>9999999999L)
                 throw new OperacionNoPermitidaException("El número de producto debe tener entre 1 y 10 dígitos para generar su EAN-13.");
             string baseDoce="28"+idProducto.ToString("D10",CultureInfo.InvariantCulture);
+            return Completar(baseDoce);
+        }
+        public static string Completar(string baseDoce)
+        {
+            if(baseDoce==null || baseDoce.Length!=12)
+                throw new OperacionNoPermitidaException("La base EAN-13 debe tener exactamente doce dígitos.");
+            foreach(char c in baseDoce) if(c<'0' || c>'9')
+                throw new OperacionNoPermitidaException("La base EAN-13 solo admite dígitos del 0 al 9.");
             return baseDoce+Control(baseDoce).ToString(CultureInfo.InvariantCulture);
         }
         private static int Control(string baseDoce)

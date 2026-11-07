@@ -183,6 +183,14 @@ def main():
                 for filename in ("008_producto_iva_ean13.sql","009_comprobar_producto_iva_ean13.sql"):
                     sql((ROOT / "database" / filename).read_text(encoding="utf-8-sig"))
                     print("OK SQL",filename,flush=True)
+            if args.productos or args.catalogos:
+                for filename in ("010_productos_balanza.sql","010_productos_balanza.sql","011_comprobar_productos_balanza.sql","003_comprobar_estructura.sql"):
+                    sql((ROOT / "database" / filename).read_text(encoding="utf-8-sig"))
+                    print("OK SQL",filename,flush=True)
+                migration=(ROOT / "database/010_productos_balanza.sql").read_text(encoding="utf-8-sig")
+                failed=sql(migration.replace("ALTER TABLE public.productos", "-- cambio de prueba\nALTER TABLE public.productos",1),required=False)
+                if failed.returncode==0 or "Checksum diferente" not in failed.stderr:
+                    raise RuntimeError("No se detectó un checksum diferente para 010")
             connection = work / "cliente.env"
             connection.write_text("SV_TEST_CONNECTION=Host=127.0.0.1;Port=5432;Database=seguridad;Username=sistemaventas_app;Password=" + credential + "\n")
             connection.chmod(0o600)
@@ -201,6 +209,8 @@ def main():
                 sql((ROOT / "database/003_comprobar_estructura.sql").read_text(encoding="utf-8-sig"))
             if args.productos or args.catalogos:
                 sql((ROOT / "database/009_comprobar_producto_iva_ean13.sql").read_text(encoding="utf-8-sig"))
+            if args.productos or args.catalogos:
+                sql((ROOT / "database/011_comprobar_productos_balanza.sql").read_text(encoding="utf-8-sig"))
         finally:
             if started:
                 result = docker("rm", "-f", name)

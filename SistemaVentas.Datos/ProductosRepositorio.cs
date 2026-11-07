@@ -13,7 +13,7 @@ namespace SistemaVentas.Datos
         private readonly NpgsqlTransaction transaccion;
         private const string Columnas = @"p.id,p.codigo,p.descripcion,p.categoria_id,p.marca_id,p.unidad_medida_id,
             p.permite_decimales,p.precio_compra,p.precio_venta,p.stock_actual,p.stock_minimo,p.activo,
-            p.xmin::text::bigint,c.nombre,coalesce(m.nombre,''),u.codigo,p.porcentaje_iva,p.codigo_barras_generado";
+            p.xmin::text::bigint,c.nombre,coalesce(m.nombre,''),u.codigo,p.porcentaje_iva,p.codigo_barras_generado,p.balanza_pesable,p.balanza_unitario";
         private const string Tablas = @" FROM public.productos p JOIN public.categorias c ON c.id=p.categoria_id
             LEFT JOIN public.marcas m ON m.id=p.marca_id JOIN public.unidades_medida u ON u.id=p.unidad_medida_id ";
 
@@ -40,8 +40,8 @@ namespace SistemaVentas.Datos
         }
         public void PrepararEscritura()
         {
-            using (var cmd = Comando("SELECT EXISTS(SELECT 1 FROM public.esquema_versiones WHERE version='008')"))
-                if (!(bool)cmd.ExecuteScalar()) throw new OperacionNoPermitidaException("Aplica la actualización de IVA y código de barras antes de guardar productos.");
+            using (var cmd = Comando("SELECT EXISTS(SELECT 1 FROM public.esquema_versiones WHERE version='010')"))
+                if (!(bool)cmd.ExecuteScalar()) throw new OperacionNoPermitidaException("Aplica la actualización de códigos de balanza antes de guardar productos.");
             // Serializa cambios de identificadores entre productos de la aplicación.
             using (var cmd = Comando("SELECT pg_advisory_xact_lock(783144982401)")) cmd.ExecuteNonQuery();
         }
@@ -51,7 +51,7 @@ namespace SistemaVentas.Datos
                 Id=r.GetInt64(0), Codigo=r.GetString(1), Descripcion=r.GetString(2), CategoriaId=r.GetInt64(3),
                 MarcaId=r.IsDBNull(4)?(long?)null:r.GetInt64(4), UnidadMedidaId=r.GetInt64(5), PermiteDecimales=r.GetBoolean(6),
                 PrecioCompra=r.GetDecimal(7), PrecioVenta=r.GetDecimal(8), StockActual=r.GetDecimal(9), StockMinimo=r.GetDecimal(10),
-                Activo=r.GetBoolean(11), Version=r.GetInt64(12), Categoria=r.GetString(13), Marca=r.GetString(14), UnidadMedida=r.GetString(15),PorcentajeIva=r.IsDBNull(16)?(int?)null:r.GetInt16(16),GenerarCodigoBarras=r.GetBoolean(17)
+                Activo=r.GetBoolean(11), Version=r.GetInt64(12), Categoria=r.GetString(13), Marca=r.GetString(14), UnidadMedida=r.GetString(15),PorcentajeIva=r.IsDBNull(16)?(int?)null:r.GetInt16(16),GenerarCodigoBarras=r.GetBoolean(17),BalanzaPesable=r.GetBoolean(18),BalanzaUnitario=r.GetBoolean(19)
             };
         }
         public Producto Obtener(long id, bool bloquear = false)
@@ -64,15 +64,15 @@ namespace SistemaVentas.Datos
                 using (var r = cmd.ExecuteReader()) while (r.Read()) producto.CodigoBarra=r.GetString(0);
             return producto;
         }
-        public PaginaProductos Listar(FiltroProductos f)
+        public PaginaProductos Listar(FiltroProductos f,LecturaBalanza lectura=null)
         {
             const string filtro = @" WHERE (p.descripcion ILIKE @q OR lower(btrim(p.codigo))=lower(@texto)
-                OR EXISTS(SELECT 1 FROM public.productos_codigos_barras b WHERE b.producto_id=p.id AND b.codigo=@texto))
+                OR EXISTS(SELECT 1 FROM public.productos_codigos_barras b WHERE b.producto_id=p.id AND (b.codigo=@texto OR (b.codigo=@balanza AND ((@unitario AND p.balanza_unitario) OR (NOT @unitario AND p.balanza_pesable))))))
                 AND (@estado='todos' OR p.activo=(@estado='activos'))
                 AND (@categoria=0 OR p.categoria_id=@categoria) AND (@marca=0 OR p.marca_id=@marca)
                 AND (@stock='todos' OR (@stock='bajo' AND p.stock_actual<=p.stock_minimo) OR (@stock='agotado' AND p.stock_actual=0)) ";
             var parametros = new object[] { "q", "%"+f.Busqueda+"%", "texto", f.Busqueda, "estado", f.Estado,
-                "categoria", f.CategoriaId??0, "marca", f.MarcaId??0, "stock", f.Stock };
+                "categoria", f.CategoriaId??0, "marca", f.MarcaId??0, "stock", f.Stock,"balanza",lectura==null?"":lectura.Prefijo,"unitario",lectura!=null && lectura.EsUnitario };
             var resultado = new PaginaProductos { Filtro=f };
             using (var cmd = Comando("SELECT count(*)"+Tablas+filtro, parametros)) resultado.Total=(long)cmd.ExecuteScalar();
             f.Pagina=Math.Min(f.Pagina,(int)Math.Max(1,Math.Min(1000000,(resultado.Total+19)/20)));
@@ -138,15 +138,15 @@ namespace SistemaVentas.Datos
         private long GuardarInterno(SolicitudProducto p)
         {
             string sql = p.Id==0
-                ? @"INSERT INTO public.productos(id,porcentaje_iva,codigo_barras_generado,codigo,descripcion,categoria_id,marca_id,unidad_medida_id,permite_decimales,precio_compra,precio_venta,stock_minimo,activo)
-                    VALUES (@id_nuevo,@iva,@generado,@codigo,@descripcion,@categoria,@marca,@unidad,@decimales,@compra,@venta,@minimo,@activo) RETURNING id"
-                : @"UPDATE public.productos SET porcentaje_iva=@iva,codigo_barras_generado=@generado,codigo=@codigo,descripcion=@descripcion,categoria_id=@categoria,marca_id=@marca,unidad_medida_id=@unidad,
+                ? @"INSERT INTO public.productos(id,porcentaje_iva,codigo_barras_generado,balanza_pesable,balanza_unitario,codigo,descripcion,categoria_id,marca_id,unidad_medida_id,permite_decimales,precio_compra,precio_venta,stock_minimo,activo)
+                    VALUES (@id_nuevo,@iva,@generado,@pesable,@unitario,@codigo,@descripcion,@categoria,@marca,@unidad,@decimales,@compra,@venta,@minimo,@activo) RETURNING id"
+                : @"UPDATE public.productos SET porcentaje_iva=@iva,codigo_barras_generado=@generado,balanza_pesable=@pesable,balanza_unitario=@unitario,codigo=@codigo,descripcion=@descripcion,categoria_id=@categoria,marca_id=@marca,unidad_medida_id=@unidad,
                     permite_decimales=@decimales,precio_compra=@compra,precio_venta=@venta,stock_minimo=@minimo,activo=@activo
                     WHERE id=@id AND xmin::text::bigint=@version RETURNING id";
             long id;
             using (var cmd = Comando(sql, "codigo",p.Codigo,"descripcion",p.Descripcion,"categoria",p.CategoriaId,"marca",p.MarcaId,
                 "unidad",p.UnidadMedidaId,"decimales",p.PermiteDecimales,"compra",p.PrecioCompra,"venta",p.PrecioVenta,"minimo",p.StockMinimo,
-                "activo",p.Activo,"id",p.Id,"version",p.Version,"id_nuevo",p.IdNuevo,"iva",p.PorcentajeIva,"generado",p.GenerarCodigoBarras))
+                "activo",p.Activo,"id",p.Id,"version",p.Version,"id_nuevo",p.IdNuevo,"iva",p.PorcentajeIva,"generado",p.GenerarCodigoBarras,"pesable",p.BalanzaPesable,"unitario",p.BalanzaUnitario))
             {
                 object resultado=cmd.ExecuteScalar();
                 if (resultado==null) throw new OperacionNoPermitidaException("El producto cambió en otra ventana. Vuelve al listado y abre Editar nuevamente.");

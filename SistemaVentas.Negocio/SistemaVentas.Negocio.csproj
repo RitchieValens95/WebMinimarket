@@ -71,4 +71,7 @@
   <ItemGroup>
     <Compile Include="Ean13.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CodigoBalanza.cs" />
+  </ItemGroup>
 </Project>

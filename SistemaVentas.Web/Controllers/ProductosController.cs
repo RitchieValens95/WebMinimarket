@@ -39,7 +39,7 @@ namespace SistemaVentas.Web.Controllers
             return Formulario(ProductoFormulario.Desde(producto));
         }
         [HttpPost,ValidateAntiForgeryToken,Permiso("PRODUCTOS_EDITAR")]
-        public ActionResult Guardar([Bind(Include="Id,Version,Codigo,Descripcion,CategoriaId,MarcaId,UnidadMedidaId,PermiteDecimales,PrecioCompra,PrecioVenta,StockMinimo,Activo,CodigoBarra,GenerarCodigoBarras,PorcentajeIva,Reserva")] ProductoFormulario modelo)
+        public ActionResult Guardar([Bind(Include="Id,Version,Codigo,Descripcion,CategoriaId,MarcaId,UnidadMedidaId,PermiteDecimales,PrecioCompra,PrecioVenta,StockMinimo,Activo,CodigoBarra,GenerarCodigoBarras,BalanzaPesable,BalanzaUnitario,PorcentajeIva,Reserva")] ProductoFormulario modelo)
         {
             if(modelo.Id==0)
             {
@@ -83,6 +83,8 @@ namespace SistemaVentas.Web.Controllers
             modelo.StockActual=actual==null?0:actual.StockActual;
             long idCodigo=actual==null?modelo.IdNuevo:actual.Id;
             modelo.CodigoGenerado=idCodigo>0 && idCodigo<=9999999999L?Ean13.Generar(idCodigo):"";
+            modelo.CodigoPesable=idCodigo>0 && idCodigo<=99999?CodigoBalanza.Prefijo(idCodigo,false):"";
+            modelo.CodigoUnitario=idCodigo>0 && idCodigo<=99999?CodigoBalanza.Prefijo(idCodigo,true):"";
             return View("Formulario",modelo);
         }
     }

@@ -367,3 +367,18 @@ ni usa MAX(id)+1; admite saltos al cancelar. Ean13.cs usa 28 + ID de 10 dígitos
 y control EAN-13. El servidor recalcula al guardar. Las futuras ventas/compras
 conservarán la tasa y su liquidación en cada detalle; editar la tasa del
 producto no debe recalcular documentos anteriores.
+
+### Balanza: banderas, PLU y campo variable
+
+La ampliación 010 conserva una sola barra por producto y agrega dos modos
+excluyentes (pesable 20 y unitario 21), también excluyentes con EAN-13 interno
+28. La identificación fija es bandera 2 + ID/PLU de 5 dígitos. Una etiqueta
+completa es bandera 2 + PLU 5 + peso/cantidad codificado 5 + control EAN-13 1.
+El campo variable no se guarda como parte del identificador del producto.
+
+`CodigoBalanza.cs` separa los campos y valida el control antes de usar la
+identificación fija para buscar. El lector conserva los cinco dígitos variables
+sin asignarles una escala aún; en el POS habrá que definir la equivalencia
+configurada en la balanza y validar cantidades antes de registrar la venta.
+Las casillas no cambian unidad, decimales ni stock. La relación diferida de
+010 impide guardar una barra generada que no corresponda a su ID y tipo.

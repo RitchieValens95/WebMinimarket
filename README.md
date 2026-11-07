@@ -31,3 +31,8 @@ La corrección de productos incorpora IVA incluido (Exento, 5 %, 10 %) y EAN-13
 interno con prefijo 28 cuando no hay barra de fabricante. Requiere aplicar
 `database/008_producto_iva_ean13.sql` y verificar con
 `database/009_comprobar_producto_iva_ean13.sql`; los pasos están en la guía 4.2.
+
+La ampliación de balanza agrega Pesable (20) y Unitario (21), con prefijo fijo
+de siete dígitos y lectura de etiquetas completas 2+5+5+1. Sobre 008 validada,
+aplica `010_productos_balanza.sql` y verifica con
+`011_comprobar_productos_balanza.sql`, siguiendo la misma guía 4.2.

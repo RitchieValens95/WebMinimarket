@@ -20,7 +20,18 @@ namespace SistemaVentas.Entidades
         public long IdNuevo { get; set; }
         public string CodigoBarra { get; set; }
         public bool GenerarCodigoBarras { get; set; }
+        public bool BalanzaPesable { get; set; }
+        public bool BalanzaUnitario { get; set; }
         public int? PorcentajeIva { get; set; }
+    }
+
+    public class LecturaBalanza
+    {
+        public bool EsUnitario { get; set; }
+        public long Plu { get; set; }
+        // Campo variable de cinco dígitos, sin suponer aún el factor de la balanza.
+        public string ValorCodificado { get; set; }
+        public string Prefijo { get; set; }
     }
 
     public class Producto : SolicitudProducto

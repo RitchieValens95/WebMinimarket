@@ -15,6 +15,8 @@
 <dt class="col-sm-4">Estado</dt><dd class="col-sm-8">@(Model.Activo?"Activo":"Inactivo")</dd>
 <dt class="col-sm-4">IVA incluido</dt><dd class="col-sm-8">@(Model.PorcentajeIva.HasValue?(Model.PorcentajeIva.Value==0?"Exento (0 %)":Model.PorcentajeIva.Value+" %"):"Pendiente de seleccionar")</dd>
 <dt class="col-sm-4">Código de barras</dt><dd class="col-sm-8"><code>@Model.CodigoBarra</code>
+@if(Model.BalanzaPesable) { <span class="badge bg-secondary">Pesable de balanza · bandera 20</span> }
+@if(Model.BalanzaUnitario) { <span class="badge bg-secondary">Unitario de balanza · bandera 21</span> }
 @if(Model.GenerarCodigoBarras) { <span class="badge bg-secondary">EAN-13 generado</span> }
 </dd></dl>
 @if(usuario.Puede("PRODUCTOS_EDITAR")) { <a class="btn btn-primary" href="@Url.Action("Editar",new{id=Model.Id})">Editar</a> }

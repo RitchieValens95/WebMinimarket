@@ -27,7 +27,7 @@ namespace SistemaVentas.Negocio
             if(f.Stock!="bajo" && f.Stock!="agotado") f.Stock="todos";
             if(f.CategoriaId<=0) f.CategoriaId=null;
             if(f.MarcaId<=0) f.MarcaId=null;
-            using(var db=new ProductosRepositorio(cadena,true)) { Exigir(db,actor);return db.Listar(f); }
+            using(var db=new ProductosRepositorio(cadena,true)) { Exigir(db,actor);return db.Listar(f,CodigoBalanza.Leer(f.Busqueda)); }
         }
         public Producto Obtener(long actor,long id)
         {
@@ -76,7 +76,9 @@ namespace SistemaVentas.Negocio
                     if(p.IdNuevo==0) p.IdNuevo=db.ReservarId();
                     if(db.Obtener(p.IdNuevo)!=null) throw new OperacionNoPermitidaException("Este producto ya fue guardado. Vuelve al listado antes de crear otro.");
                 }
-                if(p.GenerarCodigoBarras) p.CodigoBarra=Ean13.Generar(p.Id==0?p.IdNuevo:p.Id);
+                long idCodigo=p.Id==0?p.IdNuevo:p.Id;
+                if(p.BalanzaPesable || p.BalanzaUnitario) p.CodigoBarra=CodigoBalanza.Prefijo(idCodigo,p.BalanzaUnitario);
+                else if(p.GenerarCodigoBarras) p.CodigoBarra=Ean13.Generar(idCodigo);
                 db.ValidarIdentificadores(p);
                 long id=db.Guardar(p);
                 db.Auditar(actor,p.Id==0?"PRODUCTO_CREADO":"PRODUCTO_EDITADO",id);
@@ -119,7 +121,8 @@ namespace SistemaVentas.Negocio
                 Descripcion=Texto(entrada.Descripcion,200,"La descripción"),CategoriaId=entrada.CategoriaId,MarcaId=entrada.MarcaId,
                 UnidadMedidaId=entrada.UnidadMedidaId,PermiteDecimales=entrada.PermiteDecimales,PrecioCompra=entrada.PrecioCompra,
                 PrecioVenta=entrada.PrecioVenta,StockMinimo=entrada.StockMinimo,Activo=entrada.Activo,IdNuevo=entrada.IdNuevo,
-                PorcentajeIva=entrada.PorcentajeIva,GenerarCodigoBarras=entrada.GenerarCodigoBarras };
+                PorcentajeIva=entrada.PorcentajeIva,GenerarCodigoBarras=entrada.GenerarCodigoBarras,
+                BalanzaPesable=entrada.BalanzaPesable,BalanzaUnitario=entrada.BalanzaUnitario };
             Numero(p.PrecioCompra,99999999999999.9999m,4,"El precio de compra");
             Numero(p.PrecioVenta,9999999999999999.99m,2,"El precio de venta");
             Numero(p.StockMinimo,999999999999999.999m,3,"El stock mínimo");
@@ -128,7 +131,9 @@ namespace SistemaVentas.Negocio
             if(p.PorcentajeIva!=0 && p.PorcentajeIva!=5 && p.PorcentajeIva!=10)
                 throw new OperacionNoPermitidaException("Selecciona el IVA del producto: Exento, 5 % o 10 %.");
             if(p.IdNuevo<0) throw new OperacionNoPermitidaException("Abre Nuevo producto para obtener su número.");
-            p.CodigoBarra=p.GenerarCodigoBarras?null:Texto(entrada.CodigoBarra,100,"El código de barras");
+            int modos=(p.GenerarCodigoBarras?1:0)+(p.BalanzaPesable?1:0)+(p.BalanzaUnitario?1:0);
+            if(modos>1) throw new OperacionNoPermitidaException("Selecciona una sola opción: EAN-13, pesable de balanza o unitario de balanza.");
+            p.CodigoBarra=modos==1?null:Texto(entrada.CodigoBarra,100,"El código de barras");
             return p;
         }
     }

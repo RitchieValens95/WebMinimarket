@@ -102,6 +102,57 @@ La aplicación rechaza conflictos entre códigos internos y barras de otros
 productos; los índices de PostgreSQL garantizan la unicidad de cada tipo y
 una sola barra por producto. Al sustituir una barra se conserva su fila e ID.
 
+### Productos de balanza: pesables y unitarios
+
+El formulario agrega dos casillas: **Pesable de balanza (20)** y **Unitario de
+balanza (21)**. Son excluyentes entre sí y con la generación EAN-13 de prefijo
+28. Si ninguna está marcada, puedes escribir la barra del fabricante. La
+validación se aplica en el navegador, en el servicio y en PostgreSQL.
+
+En la ficha se conserva la identificación fija de siete dígitos:
+
+| Tipo | Bandera | PLU de cinco dígitos | Identificación fija |
+| --- | --- | --- | --- |
+| Pesable, producto 3 | 20 | 00003 | 2000003 |
+| Unitario, producto 5 | 21 | 00005 | 2100005 |
+
+El PLU corresponde al ID real reservado del producto, no al código interno
+editable. Admite IDs de 1 a 99999; los identificadores más largos se rechazan
+para este formato en lugar de truncarlos. Manual y EAN-13 de prefijo 28 siguen
+admitiendo sus rangos anteriores.
+
+Una **etiqueta completa de balanza** tiene bandera (2), PLU (5), peso/cantidad
+variable (5) y control EAN-13 (1): 13 dígitos en total. Los siete primeros
+identifican el producto; los cinco siguientes cambian según el pesaje o la
+cantidad de esa etiqueta. Ejemplos de composición:
+
+```text
+20 | 00003 | 00250 | 4  → 2000003002504
+21 | 00005 | 00003 | 1  → 2100005000031
+```
+
+`CodigoBalanza.cs` construye y separa esos campos y reutiliza el cálculo de
+control de `Ean13.cs`. Conserva el campo variable como cinco dígitos; no supone
+si representa gramos u otra escala decimal. Esa equivalencia se confirmará con
+la configuración de la balanza antes de aplicar cantidades en el POS.
+
+La búsqueda de Productos acepta tanto la identificación fija de siete dígitos
+como una etiqueta completa con bandera y control válidos. El modo de la ficha
+debe coincidir con la bandera de la etiqueta. Leer una etiqueta localiza el
+producto, sin registrar ventas ni cambiar existencias. Una etiqueta con control
+incorrecto no se interpreta como balanza; los códigos manuales conservan su
+búsqueda literal. No se reemplaza la barra fija del producto por cada pesaje.
+
+La unidad de medida y **Permite cantidades decimales** se configuran por
+separado. Las casillas de balanza no convierten cantidades ni reinterpretan el
+historial. Para fracciones de peso elige la unidad y los decimales apropiados.
+
+La migración **010_productos_balanza.sql** agrega indicadores inicialmente
+falsos, una restricción de modo único y una relación diferida que comprueba
+que la barra fija corresponda al ID y al tipo. Conserva los códigos anteriores,
+precios, IVA, stock e historial. **011_comprobar_productos_balanza.sql** verifica
+la estructura y los datos resultantes. No se modifican las migraciones aplicadas.
+
 ### IVA del producto
 
 Selecciona **Exento (0 %), 5 % o 10 %**. Los precios de compra y venta ingresados
@@ -198,6 +249,29 @@ Cuando el código de esta entrega esté disponible:
    `database/003_comprobar_estructura.sql` si quieres confirmar que la base
    sigue íntegra; ambos son verificadores, no una reinstalación.
 
+### Actualizar desde la corrección 008 ya validada
+
+Si ya aplicaste 008/009 y comprobaste IVA y EAN-13:
+
+1. Detén IIS Express. Comprueba `git status --short` y conserva cualquier cambio
+   local antes de incorporar el código actualizado de la rama de productos.
+2. En pgAdmin, selecciona tu base del sistema y ejecuta únicamente
+   `database/010_productos_balanza.sql`; debe terminar en COMMIT e indicar que
+   se aplicó la migración 010. Repetir el mismo archivo no duplica datos.
+3. Ejecuta `database/011_comprobar_productos_balanza.sql`. Debe indicar
+   `Productos de balanza verificados correctamente.` Los verificadores 003 y
+   009 siguen siendo compatibles con la estructura nueva.
+4. Recompila la solución e inicia por HTTPS. En Nuevo producto selecciona un
+   tipo de balanza; revisa su prefijo, guarda y vuelve a Editar. Las casillas
+   y el código deben conservarse. Prueba cambiar de pesable a unitario y a
+   EAN-13: solo puede quedar uno marcado.
+5. Con un producto de prueba, busca por su código fijo y por una etiqueta
+   válida que tenga ese prefijo. La existencia debe conservarse.
+
+No repitas las migraciones anteriores ni recrees la base. Si 010 informa un
+bloqueo, la transacción se revierte: detén las otras operaciones y repite el
+mismo archivo sin cambiar su checksum.
+
 ## Recorrido de revisión en Windows
 
 1. Crea una categoría y una marca activas, si no tienes una apropiada.
@@ -262,12 +336,18 @@ Windows. `--catalogos` prueba la etapa 4.1; sin ninguna de esas dos opciones,
 prueba seguridad. Los cuatro proyectos y las 15 vistas Razor se compilan contra
 .NET Framework 4.8 en cada ejecución.
 
-La corrección pasó **99 comprobaciones de productos**, **60 de catálogos** y
+La corrección de IVA pasó **99 comprobaciones de productos**, **60 de catálogos** y
 **58 de seguridad**, incluyendo comparación
 entre SQL y C# para 1000 IDs, reservas simultáneas, protección de reservas,
 IVA y restricciones reales de la base. Compilan los cuatro proyectos y las
 15 vistas. Se comprueba que 008 se repite sin duplicar, rechaza un checksum
 distinto y revierte por completo si existen varias barras por producto.
+
+La ampliación de balanza pasó **119 comprobaciones de productos**, **60 de
+catálogos** y **58 de seguridad**, con los cuatro proyectos y 15 vistas compilados.
+
+Las opciones de balanza añaden pruebas de modo, persistencia, límites del PLU,
+composición y lectura 2+5+5+1 y búsqueda por etiqueta completa.
 
 `tests/productos/probar_formulario.py` verifica con Chromium/Playwright el
 script real de la casilla (campo manual/automático, solo lectura y recuperación

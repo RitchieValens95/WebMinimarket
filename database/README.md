@@ -205,3 +205,11 @@ a los productos anteriores: detiene la actualización si hay más de una barra
 por producto y deja el impuesto anterior pendiente. Consulta el procedimiento
 previo de selección de barra y los pasos de actualización en
 [la guía de productos](../docs/etapa-4-2-productos.md).
+
+## Productos de balanza
+
+Sobre 008 ya validada, ejecuta `010_productos_balanza.sql` y después
+`011_comprobar_productos_balanza.sql`. Los indicadores nuevos comienzan en
+falso y los datos anteriores se conservan. El prefijo fijo guardado es de
+siete dígitos; el peso/cantidad de cada etiqueta no se guarda como parte del
+código del producto. Los pasos están en la guía de productos.

@@ -36,9 +36,13 @@
 <small>Los precios de compra y venta ya incluyen este IVA.</small></div>
 <div class="form-check mb-2">@Html.CheckBoxFor(m=>m.GenerarCodigoBarras,new{@class="form-check-input"})
 @Html.LabelFor(m=>m.GenerarCodigoBarras,new{@class="form-check-label"})</div>
+<div class="form-check mb-2">@Html.CheckBoxFor(m=>m.BalanzaPesable,new{@class="form-check-input"})
+@Html.LabelFor(m=>m.BalanzaPesable,new{@class="form-check-label"})</div>
+<div class="form-check mb-2">@Html.CheckBoxFor(m=>m.BalanzaUnitario,new{@class="form-check-input"})
+@Html.LabelFor(m=>m.BalanzaUnitario,new{@class="form-check-label"})</div>
 @Html.LabelFor(m=>m.CodigoBarra,new{@class="form-label"})
-@Html.TextBoxFor(m=>m.CodigoBarra,new{@class="form-control",maxlength="100",autocomplete="off",data_ean13=Model.CodigoGenerado,aria_describedby="ayuda-barra"})
-<small id="ayuda-barra">Un solo código por producto. Al marcar la casilla se genera automáticamente su EAN-13.</small>
+@Html.TextBoxFor(m=>m.CodigoBarra,new{@class="form-control",maxlength="100",autocomplete="off",data_ean13=Model.CodigoGenerado,data_pesable=Model.CodigoPesable,data_unitario=Model.CodigoUnitario,aria_describedby="ayuda-barra"})
+<small id="ayuda-barra">Un solo código por producto. Balanza: bandera (2) + PLU (5); la etiqueta añade peso o cantidad (5) y control EAN-13.</small><p id="estado-barra" class="text-danger mb-0" aria-live="polite"></p>
 </div>
 <div class="col-md-5"><div class="alert alert-info h-100 mb-0">Existencia actual: <strong>@Model.StockActual.ToString("0.###",CultureInfo.GetCultureInfo("es-PY"))</strong>.<br />
 Las existencias cambian mediante compras, ventas o ajustes. Si ya hay historial, conserva la unidad y la opción de cantidades decimales.</div></div>
