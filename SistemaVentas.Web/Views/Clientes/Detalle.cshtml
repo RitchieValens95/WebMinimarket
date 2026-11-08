@@ -1,0 +1,15 @@
+﻿@model SistemaVentas.Entidades.Cliente
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title=Model.Nombre;var usuario=SeguridadWeb.Usuario(Context); }
+<h1 class="h2">@Model.Nombre</h1>
+@if(Model.EsGenerico){<div class="alert alert-info">Consumidor final es el cliente genérico para operaciones sin identificación del comprador. Sus datos y su estado se conservan.</div>}
+<dl class="row bg-white border rounded p-3">
+<dt class="col-sm-4">Documento</dt><dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Documento)?"Sin documento":Model.TipoDocumento+" "+Model.Documento)</dd>
+<dt class="col-sm-4">Teléfono</dt><dd class="col-sm-8">@(Model.Telefono??"Sin registrar")</dd>
+<dt class="col-sm-4">Correo electrónico</dt><dd class="col-sm-8">@(Model.Correo??"Sin registrar")</dd>
+<dt class="col-sm-4">Dirección</dt><dd class="col-sm-8">@(Model.Direccion??"Sin registrar")</dd>
+<dt class="col-sm-4">Estado</dt><dd class="col-sm-8">@(Model.Activo?"Activo":"Inactivo")</dd>
+</dl>
+@if(usuario.Puede("CLIENTES_EDITAR") && !Model.EsGenerico){<a class="btn btn-primary" href="@Url.Action("Editar",new{id=Model.Id})">Editar</a>}
+@if(usuario.Puede("VENTAS_VER_TODAS") || usuario.Puede("VENTAS_VER_PROPIAS")){<a class="btn btn-outline-primary" href="@Url.Action("Historial",new{id=Model.Id})">Historial de compras</a>}
+<a class="btn btn-outline-secondary" href="@Url.Action("Index")">Volver al listado</a>

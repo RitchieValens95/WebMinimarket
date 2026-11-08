@@ -384,3 +384,21 @@ con su unidad de lectura. En el POS se validarán las cantidades y su coherencia
 con el producto antes de registrar la venta.
 Las casillas no cambian unidad, decimales ni stock. La relación diferida de
 010 impide guardar una barra generada que no corresponda a su ID y tipo.
+
+## Etapa 4.3: clientes
+
+Se utilizan las tablas e índices existentes, sin nuevas migraciones ni paquetes.
+`CLIENTES_REGISTRAR` y `CLIENTES_EDITAR` se validan por separado, con
+`CLIENTES_VER` para acceder al módulo. El cajero puede registrar activos, pero
+no modificar clientes existentes. El cliente genérico se consulta y conserva
+sin cambios desde la aplicación; no se recibe `es_generico` al guardar.
+
+Tipo y número de documento son opcionales como par; el índice existente evita
+duplicados incluso entre inactivos. La edición usa bloqueo de fila y `xmin`,
+y audita en la misma transacción. La desactivación conserva contactos y ventas.
+
+El historial consulta solo ventas confirmadas. `VENTAS_VER_PROPIAS` limita
+tanto documentos como contadores e importes al actor actual;
+`VENTAS_VER_TODAS` permite la consulta completa. Las filas y totales se leen
+en una misma instantánea. Archivos y revisión en Windows se explican en
+[la guía de clientes](etapa-4-3-clientes.md).

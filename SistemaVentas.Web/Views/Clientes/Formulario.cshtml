@@ -1,0 +1,29 @@
+﻿@model SistemaVentas.Web.ViewModels.ClienteFormulario
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title=Model.Id==0?"Nuevo cliente":"Editar cliente"; }
+<h1 class="h2">@ViewBag.Title</h1>
+@using(Html.BeginForm(Model.Id==0?"Registrar":"Guardar","Clientes",FormMethod.Post,new{@class="row g-3"})){
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m=>m.Id)
+@Html.HiddenFor(m=>m.Version)
+<div class="col-12">@Html.ValidationSummary(false,"",new{@class="text-danger",role="alert"})</div>
+<div class="col-12">@Html.LabelFor(m=>m.Nombre,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Nombre,new{@class="form-control",maxlength="150",required="required",autocomplete="name"})</div>
+<div class="col-md-4">@Html.LabelFor(m=>m.TipoDocumento,new{@class="form-label"})
+@Html.DropDownListFor(m=>m.TipoDocumento,new SelectList(new[]{new{Valor="CI",Texto="Cédula de identidad"},new{Valor="RUC",Texto="RUC"},new{Valor="PASAPORTE",Texto="Pasaporte"},new{Valor="OTRO",Texto="Otro"}},"Valor","Texto"),"Sin documento",new{@class="form-select"})</div>
+<div class="col-md-8">@Html.LabelFor(m=>m.Documento,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Documento,new{@class="form-control",maxlength="40",aria_describedby="ayuda-documento"})
+<small id="ayuda-documento">El tipo y el número se completan juntos o se dejan ambos vacíos. Se conservan los ceros y guiones.</small></div>
+<div class="col-md-5">@Html.LabelFor(m=>m.Telefono,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Telefono,new{@class="form-control",maxlength="40",autocomplete="tel"})</div>
+<div class="col-md-7">@Html.LabelFor(m=>m.Correo,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Correo,new{@class="form-control",maxlength="254",type="email",autocomplete="email"})</div>
+<div class="col-12">@Html.LabelFor(m=>m.Direccion,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Direccion,new{@class="form-control",maxlength="250",autocomplete="street-address"})</div>
+if(SeguridadWeb.Usuario(Context).Puede("CLIENTES_EDITAR")){
+<div class="col-12 form-check ms-2">@Html.CheckBoxFor(m=>m.Activo,new{@class="form-check-input"})
+@Html.LabelFor(m=>m.Activo,new{@class="form-check-label"})</div>
+}
+<div class="col-12"><button class="btn btn-primary" type="submit">Guardar cliente</button>
+<a class="btn btn-outline-secondary" href="@Url.Action("Index")">Volver al listado</a></div>
+}

@@ -103,4 +103,7 @@
   <ItemGroup>
     <Compile Include="ProductosRepositorio.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ClientesRepositorio.cs" />
+  </ItemGroup>
 </Project>

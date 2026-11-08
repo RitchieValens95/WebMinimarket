@@ -74,4 +74,7 @@
   <ItemGroup>
     <Compile Include="CodigoBalanza.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ServicioClientes.cs" />
+  </ItemGroup>
 </Project>

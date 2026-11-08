@@ -1,0 +1,40 @@
+﻿@model SistemaVentas.Entidades.PaginaClientes
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title="Clientes";var usuario=SeguridadWeb.Usuario(Context); }
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+<h1 class="h2">Clientes</h1>
+@if(usuario.Puede("CLIENTES_REGISTRAR")){<a class="btn btn-primary" href="@Url.Action("Crear")">Nuevo cliente</a>}
+</div>
+@using(Html.BeginForm("Index","Clientes",FormMethod.Get,new{@class="row g-2 mb-3"})){
+<div class="col-md-7"><label for="busqueda" class="form-label">Buscar por nombre, documento o RUC</label>
+<input id="busqueda" name="busqueda" value="@Model.Busqueda" maxlength="150" class="form-control" /></div>
+<div class="col-md-3"><label for="estado" class="form-label">Estado</label>
+@Html.DropDownList("estado",new SelectList(new[]{new{Valor="todos",Texto="Todos"},new{Valor="activos",Texto="Activos"},new{Valor="inactivos",Texto="Inactivos"}},"Valor","Texto",Model.Estado),new{@class="form-select"})</div>
+<div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-primary" type="submit">Buscar</button></div>
+}
+<p>@Model.Total cliente(s) encontrado(s).</p>
+<div class="table-responsive bg-white border rounded"><table class="table table-hover align-middle mb-0">
+<thead><tr><th scope="col">Nombre</th><th scope="col">Documento</th><th scope="col">Teléfono</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>
+@foreach(var c in Model.Registros){
+<tr><td>@c.Nombre @if(c.EsGenerico){<span class="badge bg-secondary">Genérico</span>}</td>
+<td>@c.TipoDocumento @c.Documento</td><td>@c.Telefono</td><td>@(c.Activo?"Activo":"Inactivo")</td><td>
+<a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Detalle",new{id=c.Id})">Ver</a>
+@if(usuario.Puede("CLIENTES_EDITAR") && !c.EsGenerico){
+<a class="btn btn-sm btn-outline-primary" href="@Url.Action("Editar",new{id=c.Id})">Editar</a>
+if(c.Activo){
+using(Html.BeginForm("Desactivar","Clientes",FormMethod.Post,new{@class="d-inline",onsubmit="return confirm('¿Desactivar este cliente? Su historial se conservará.');"})){
+@Html.AntiForgeryToken()
+<input type="hidden" name="id" value="@c.Id" /><input type="hidden" name="version" value="@c.Version" />
+<button class="btn btn-sm btn-outline-danger" type="submit">Desactivar</button>
+}
+}
+}
+</td></tr>
+}
+@if(Model.Registros.Count==0){<tr><td colspan="5" class="text-center py-4">No hay clientes para esta búsqueda.</td></tr>}
+</tbody></table></div>
+<nav class="d-flex align-items-center gap-3 mt-3" aria-label="Paginación de clientes">
+@if(Model.Pagina>1){<a href="@Url.Action("Index",new{pagina=Model.Pagina-1,busqueda=Model.Busqueda,estado=Model.Estado})">Anterior</a>}
+<span>Página @Model.Pagina de @Math.Max(1,(Model.Total+19)/20)</span>
+@if((long)Model.Pagina*20<Model.Total){<a href="@Url.Action("Index",new{pagina=Model.Pagina+1,busqueda=Model.Busqueda,estado=Model.Estado})">Siguiente</a>}
+</nav>

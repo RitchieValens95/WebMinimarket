@@ -15,13 +15,14 @@ con ADO.NET/Npgsql.
 - [Etapa 3: acceso, usuarios, roles y permisos](docs/etapa-3-seguridad.md).
 - [Etapa 4.1: categorías y marcas](docs/etapa-4-1-catalogos.md).
 - [Etapa 4.2: productos e historial de stock](docs/etapa-4-2-productos.md).
+- [Etapa 4.3: clientes e historial de compras](docs/etapa-4-3-clientes.md).
 
 La base técnica, la conexión y el esquema de la etapa 2 se validaron en Windows.
-El acceso como administrador de la etapa 3 se comprobó en Windows y la etapa
-4.1 de categorías y marcas fue revisada por el usuario. La etapa 4.2 incorpora
-productos, barra única, IVA y consulta de movimientos, con pruebas sobre
-PostgreSQL temporal y pendiente del recorrido bajo IIS Express. Clientes,
-proveedores, POS, compras, caja y reportes siguen las siguientes entregas.
+El acceso y los módulos anteriores de categorías, marcas y productos fueron
+revisados por el usuario en Windows. La etapa 4.3 incorpora clientes e historial
+de compras según permisos, con pruebas sobre PostgreSQL temporal y pendiente
+del recorrido bajo IIS Express. Proveedores, POS, compras, caja y reportes
+siguen las siguientes entregas.
 
 La ejecución de la aplicación requiere Windows y las herramientas de desarrollo
 de .NET Framework 4.8. El SDK de .NET moderno no sustituye ese entorno. La

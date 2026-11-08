@@ -17,6 +17,9 @@ namespace SistemaVentas.Web.Seguridad
         public static ServicioProductos Productos()
         { return new ServicioProductos(Cadena()); }
 
+        public static ServicioClientes Clientes()
+        { return new ServicioClientes(Cadena()); }
+
         private static string Cadena()
         {
             var cadena = ConfigurationManager.AppSettings["SistemaVentas.PostgreSql"];

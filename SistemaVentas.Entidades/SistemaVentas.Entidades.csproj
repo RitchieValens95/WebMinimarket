@@ -63,4 +63,7 @@
   <ItemGroup>
     <Compile Include="Producto.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Cliente.cs" />
+  </ItemGroup>
 </Project>
