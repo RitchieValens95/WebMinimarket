@@ -1,0 +1,20 @@
+﻿@model SistemaVentas.Entidades.HistorialProveedor
+@using System.Globalization
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title="Compras al proveedor";var cultura=CultureInfo.GetCultureInfo("es-PY"); }
+<h1 class="h2">Compras al proveedor</h1>
+<p><strong>@Model.Proveedor.Nombre</strong></p>
+<p>@Model.Total compra(s) confirmada(s). Importe total: <strong>@Model.ImporteTotal.ToString("N2",cultura)</strong>.</p>
+<div class="table-responsive bg-white border rounded"><table class="table table-striped align-middle mb-0">
+<thead><tr><th scope="col">Registro</th><th scope="col">Documento</th><th scope="col">Fecha (Paraguay)</th><th scope="col">Registrada por</th><th scope="col">Total</th></tr></thead><tbody>
+@foreach(var compra in Model.Compras){
+<tr><td>@compra.Id</td><td>@(compra.NumeroDocumento??"Sin documento")</td><td>@HoraParaguay.Mostrar(compra.Fecha)</td><td>@compra.Usuario</td><td>@compra.Total.ToString("N2",cultura)</td></tr>
+}
+@if(Model.Compras.Count==0){<tr><td colspan="5" class="text-center py-4">No hay compras confirmadas para este proveedor.</td></tr>}
+</tbody></table></div>
+<nav class="d-flex align-items-center gap-3 my-3" aria-label="Paginación de compras al proveedor">
+@if(Model.Pagina>1){<a href="@Url.Action("Historial",new{id=Model.Proveedor.Id,pagina=Model.Pagina-1})">Anterior</a>}
+<span>Página @Model.Pagina de @Math.Max(1,(Model.Total+19)/20)</span>
+@if((long)Model.Pagina*20<Model.Total){<a href="@Url.Action("Historial",new{id=Model.Proveedor.Id,pagina=Model.Pagina+1})">Siguiente</a>}
+</nav>
+<a class="btn btn-outline-secondary" href="@Url.Action("Detalle",new{id=Model.Proveedor.Id})">Volver al proveedor</a>

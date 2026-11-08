@@ -402,3 +402,22 @@ tanto documentos como contadores e importes al actor actual;
 `VENTAS_VER_TODAS` permite la consulta completa. Las filas y totales se leen
 en una misma instantánea. Archivos y revisión en Windows se explican en
 [la guía de clientes](etapa-4-3-clientes.md).
+
+## Etapa 4.4: proveedores
+
+El módulo usa las tablas e índices existentes, sin una nueva migración ni
+paquetes adicionales. `PROVEEDORES_ADMINISTRAR` protege consultas y escrituras;
+el historial exige también `COMPRAS_ADMINISTRAR`. Administrador y Supervisor
+poseen ambos permisos iniciales; Cajero no tiene acceso con su rol inicial.
+
+Nombre o razón social es obligatorio; RUC y contacto son opcionales. El RUC
+se conserva como texto y el índice existente impide duplicarlo incluso entre
+inactivos. Editar y desactivar usan bloqueo de fila y comparación de `xmin`,
+con auditoría en la misma transacción. Los registros se reactivan y no se
+eliminan físicamente desde la aplicación.
+
+El historial muestra compras confirmadas del proveedor con contador e importe
+acumulado desde la misma instantánea que las filas paginadas. No crea compras
+ni modifica inventario al consultar o actualizar los datos de contacto.
+El recorrido de archivos y validación se explica en
+[la guía de proveedores](etapa-4-4-proveedores.md).

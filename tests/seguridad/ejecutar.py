@@ -30,6 +30,7 @@ def main():
     suites.add_argument("--catalogos", action="store_true", help="Comprobar etapa 4.1 sobre una base temporal independiente")
     suites.add_argument("--productos", action="store_true", help="Comprobar etapa 4.2 sobre una base temporal independiente")
     suites.add_argument("--clientes", action="store_true", help="Comprobar etapa 4.3 sobre una base temporal independiente")
+    suites.add_argument("--proveedores", action="store_true", help="Comprobar etapa 4.4 en una base temporal independiente")
     args = parser.parse_args()
     sdk = subprocess.check_output([args.dotnet, "--list-sdks"], text=True).splitlines()[-1]
     version, location = sdk.split(" ", 1)
@@ -86,6 +87,8 @@ def main():
             compile_csharp([ROOT / "tests/productos/ProductosPruebas.cs"], references, runtime / "ProductosPruebas.exe", exe=True)
         if args.clientes:
             compile_csharp([ROOT / "tests/clientes/ClientesPruebas.cs"], references, runtime / "ClientesPruebas.exe", exe=True)
+        if args.proveedores:
+            compile_csharp([ROOT / "tests/proveedores/ProveedoresPruebas.cs"], references, runtime / "ProveedoresPruebas.exe", exe=True)
         compile_csharp([ROOT / "tools/AdministradorInicial.cs"], references, runtime / "AdministradorInicial.exe", exe=True, language="5")
         # Solo algoritmos/redirecciones de la aplicación; no se copian secretos reales.
         web = (ROOT / "SistemaVentas.Web/Web.config").read_text(encoding="utf-8-sig")
@@ -136,7 +139,7 @@ def main():
             result = sql(changed, required=False)
             if result.returncode == 0 or "Checksum diferente" not in result.stderr:
                 raise RuntimeError("No se detectó el cambio de checksum de 004")
-            if args.catalogos or args.productos or args.clientes:
+            if args.catalogos or args.productos or args.clientes or args.proveedores:
                 # Una base anterior puede contener relaciones hoy incompatibles.
                 # La migración debe rechazarlas sin repararlas ni dejar DDL parcial.
                 sql("INSERT INTO categorias(nombre,activo) VALUES ('Preflight inactiva',false); "
@@ -182,11 +185,11 @@ def main():
                 failed=sql(changed,required=False)
                 if failed.returncode==0 or "Checksum diferente" not in failed.stderr:
                     raise RuntimeError("No se detectó el cambio de checksum de 008")
-            if args.catalogos or args.clientes:
+            if args.catalogos or args.clientes or args.proveedores:
                 for filename in ("008_producto_iva_ean13.sql","009_comprobar_producto_iva_ean13.sql"):
                     sql((ROOT / "database" / filename).read_text(encoding="utf-8-sig"))
                     print("OK SQL",filename,flush=True)
-            if args.productos or args.catalogos or args.clientes:
+            if args.productos or args.catalogos or args.clientes or args.proveedores:
                 for filename in ("010_productos_balanza.sql","010_productos_balanza.sql","011_comprobar_productos_balanza.sql","003_comprobar_estructura.sql"):
                     sql((ROOT / "database" / filename).read_text(encoding="utf-8-sig"))
                     print("OK SQL",filename,flush=True)
@@ -205,14 +208,14 @@ def main():
                 print(result.stdout, flush=True)
                 if result.returncode:
                     raise RuntimeError(result.stderr)
-            mono("ClientesPruebas.exe" if args.clientes else "ProductosPruebas.exe" if args.productos else "CatalogosPruebas.exe" if args.catalogos else "SeguridadPruebas.exe")
+            mono("ProveedoresPruebas.exe" if args.proveedores else "ClientesPruebas.exe" if args.clientes else "ProductosPruebas.exe" if args.productos else "CatalogosPruebas.exe" if args.catalogos else "SeguridadPruebas.exe")
             sql((ROOT / "database/005_comprobar_seguridad.sql").read_text(encoding="utf-8-sig"))
-            if args.catalogos or args.productos or args.clientes:
+            if args.catalogos or args.productos or args.clientes or args.proveedores:
                 sql((ROOT / "database/007_comprobar_catalogos.sql").read_text(encoding="utf-8-sig"))
                 sql((ROOT / "database/003_comprobar_estructura.sql").read_text(encoding="utf-8-sig"))
-            if args.productos or args.catalogos or args.clientes:
+            if args.productos or args.catalogos or args.clientes or args.proveedores:
                 sql((ROOT / "database/009_comprobar_producto_iva_ean13.sql").read_text(encoding="utf-8-sig"))
-            if args.productos or args.catalogos or args.clientes:
+            if args.productos or args.catalogos or args.clientes or args.proveedores:
                 sql((ROOT / "database/011_comprobar_productos_balanza.sql").read_text(encoding="utf-8-sig"))
         finally:
             if started:

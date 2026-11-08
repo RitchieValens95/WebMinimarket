@@ -66,4 +66,7 @@
   <ItemGroup>
     <Compile Include="Cliente.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Proveedor.cs" />
+  </ItemGroup>
 </Project>

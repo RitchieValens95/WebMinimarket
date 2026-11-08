@@ -1,0 +1,34 @@
+﻿@model SistemaVentas.Entidades.PaginaProveedores
+@{ ViewBag.Title="Proveedores"; }
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"><h1 class="h2">Proveedores</h1>
+<a class="btn btn-primary" href="@Url.Action("Crear")">Nuevo proveedor</a></div>
+@using(Html.BeginForm("Index","Proveedores",FormMethod.Get,new{@class="row g-2 mb-3"})){
+<div class="col-md-7"><label for="busqueda" class="form-label">Buscar por nombre o RUC</label>
+<input id="busqueda" name="busqueda" value="@Model.Busqueda" maxlength="150" class="form-control" /></div>
+<div class="col-md-3"><label for="estado" class="form-label">Estado</label>
+@Html.DropDownList("estado",new SelectList(new[]{new{Valor="todos",Texto="Todos"},new{Valor="activos",Texto="Activos"},new{Valor="inactivos",Texto="Inactivos"}},"Valor","Texto",Model.Estado),new{@class="form-select"})</div>
+<div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-primary" type="submit">Buscar</button></div>
+}
+<p>@Model.Total proveedor(es) encontrado(s).</p>
+<div class="table-responsive bg-white border rounded"><table class="table table-hover align-middle mb-0">
+<thead><tr><th scope="col">Nombre o razón social</th><th scope="col">RUC</th><th scope="col">Teléfono</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody>
+@foreach(var p in Model.Registros){
+<tr><td>@p.Nombre</td><td>@p.Ruc</td><td>@p.Telefono</td><td>@(p.Activo?"Activo":"Inactivo")</td><td>
+<a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Detalle",new{id=p.Id})">Ver</a>
+<a class="btn btn-sm btn-outline-primary" href="@Url.Action("Editar",new{id=p.Id})">Editar</a>
+@if(p.Activo){
+using(Html.BeginForm("Desactivar","Proveedores",FormMethod.Post,new{@class="d-inline",onsubmit="return confirm('¿Desactivar este proveedor? Sus compras se conservarán.');"})){
+@Html.AntiForgeryToken()
+<input type="hidden" name="id" value="@p.Id" /><input type="hidden" name="version" value="@p.Version" />
+<button class="btn btn-sm btn-outline-danger" type="submit">Desactivar</button>
+}
+}
+</td></tr>
+}
+@if(Model.Registros.Count==0){<tr><td colspan="5" class="text-center py-4">No hay proveedores para esta búsqueda.</td></tr>}
+</tbody></table></div>
+<nav class="d-flex align-items-center gap-3 mt-3" aria-label="Paginación de proveedores">
+@if(Model.Pagina>1){<a href="@Url.Action("Index",new{pagina=Model.Pagina-1,busqueda=Model.Busqueda,estado=Model.Estado})">Anterior</a>}
+<span>Página @Model.Pagina de @Math.Max(1,(Model.Total+19)/20)</span>
+@if((long)Model.Pagina*20<Model.Total){<a href="@Url.Action("Index",new{pagina=Model.Pagina+1,busqueda=Model.Busqueda,estado=Model.Estado})">Siguiente</a>}
+</nav>

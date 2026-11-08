@@ -24,6 +24,7 @@
 @if (actual.Puede("MARCAS_ADMINISTRAR")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Marcas")">Marcas</a> }
 @if (actual.Puede("PRODUCTOS_VER")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Productos")">Productos</a> }
 @if (actual.Puede("CLIENTES_VER")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Clientes")">Clientes</a> }
+@if (actual.Puede("PROVEEDORES_ADMINISTRAR")) { <a class="list-group-item list-group-item-action" href="@Url.Action("Index", "Proveedores")">Proveedores</a> }
 </nav>
 <div class="px-3 mt-4">
 @using (Html.BeginForm("Salir", "Acceso", FormMethod.Post)) {

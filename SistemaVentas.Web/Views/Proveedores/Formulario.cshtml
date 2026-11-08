@@ -1,0 +1,24 @@
+﻿@model SistemaVentas.Web.ViewModels.ProveedorFormulario
+@{ ViewBag.Title=Model.Id==0?"Nuevo proveedor":"Editar proveedor"; }
+<h1 class="h2">@ViewBag.Title</h1>
+@using(Html.BeginForm("Guardar","Proveedores",FormMethod.Post,new{@class="row g-3"})){
+@Html.AntiForgeryToken()
+@Html.HiddenFor(m=>m.Id)
+@Html.HiddenFor(m=>m.Version)
+<div class="col-12">@Html.ValidationSummary(false,"",new{@class="text-danger",role="alert"})</div>
+<div class="col-md-8">@Html.LabelFor(m=>m.Nombre,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Nombre,new{@class="form-control",maxlength="150",required="required",autocomplete="organization"})</div>
+<div class="col-md-4">@Html.LabelFor(m=>m.Ruc,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Ruc,new{@class="form-control",maxlength="40",aria_describedby="ayuda-ruc"})
+<small id="ayuda-ruc">Opcional. Se conservan los ceros iniciales y guiones.</small></div>
+<div class="col-md-5">@Html.LabelFor(m=>m.Telefono,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Telefono,new{@class="form-control",maxlength="40",autocomplete="tel"})</div>
+<div class="col-md-7">@Html.LabelFor(m=>m.Correo,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Correo,new{@class="form-control",maxlength="254",type="email",autocomplete="email"})</div>
+<div class="col-12">@Html.LabelFor(m=>m.Direccion,new{@class="form-label"})
+@Html.TextBoxFor(m=>m.Direccion,new{@class="form-control",maxlength="250",autocomplete="street-address"})</div>
+<div class="col-12 form-check ms-2">@Html.CheckBoxFor(m=>m.Activo,new{@class="form-check-input"})
+@Html.LabelFor(m=>m.Activo,new{@class="form-check-label"})</div>
+<div class="col-12"><button class="btn btn-primary" type="submit">Guardar proveedor</button>
+<a class="btn btn-outline-secondary" href="@Url.Action("Index")">Volver al listado</a></div>
+}

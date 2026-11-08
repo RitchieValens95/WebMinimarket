@@ -16,13 +16,13 @@ con ADO.NET/Npgsql.
 - [Etapa 4.1: categorías y marcas](docs/etapa-4-1-catalogos.md).
 - [Etapa 4.2: productos e historial de stock](docs/etapa-4-2-productos.md).
 - [Etapa 4.3: clientes e historial de compras](docs/etapa-4-3-clientes.md).
+- [Etapa 4.4: proveedores e historial de compras](docs/etapa-4-4-proveedores.md).
 
 La base técnica, la conexión y el esquema de la etapa 2 se validaron en Windows.
-El acceso y los módulos anteriores de categorías, marcas y productos fueron
-revisados por el usuario en Windows. La etapa 4.3 incorpora clientes e historial
-de compras según permisos, con pruebas sobre PostgreSQL temporal y pendiente
-del recorrido bajo IIS Express. Proveedores, POS, compras, caja y reportes
-siguen las siguientes entregas.
+El acceso y los módulos anteriores se revisaron con el usuario en Windows.
+La etapa 4.4 incorpora proveedores e historial de compras según permisos, con
+pruebas en PostgreSQL temporal y pendiente del recorrido bajo IIS Express.
+POS, registro de compras, caja y reportes siguen las próximas etapas.
 
 La ejecución de la aplicación requiere Windows y las herramientas de desarrollo
 de .NET Framework 4.8. El SDK de .NET moderno no sustituye ese entorno. La

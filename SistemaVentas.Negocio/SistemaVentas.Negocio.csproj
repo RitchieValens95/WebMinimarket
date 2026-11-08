@@ -77,4 +77,7 @@
   <ItemGroup>
     <Compile Include="ServicioClientes.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ServicioProveedores.cs" />
+  </ItemGroup>
 </Project>

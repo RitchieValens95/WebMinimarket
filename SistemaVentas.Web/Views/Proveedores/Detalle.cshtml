@@ -1,0 +1,14 @@
+﻿@model SistemaVentas.Entidades.Proveedor
+@using SistemaVentas.Web.Seguridad
+@{ ViewBag.Title=Model.Nombre; }
+<h1 class="h2">@Model.Nombre</h1>
+<dl class="row bg-white border rounded p-3">
+<dt class="col-sm-4">RUC</dt><dd class="col-sm-8">@(Model.Ruc??"Sin registrar")</dd>
+<dt class="col-sm-4">Teléfono</dt><dd class="col-sm-8">@(Model.Telefono??"Sin registrar")</dd>
+<dt class="col-sm-4">Correo electrónico</dt><dd class="col-sm-8">@(Model.Correo??"Sin registrar")</dd>
+<dt class="col-sm-4">Dirección</dt><dd class="col-sm-8">@(Model.Direccion??"Sin registrar")</dd>
+<dt class="col-sm-4">Estado</dt><dd class="col-sm-8">@(Model.Activo?"Activo":"Inactivo")</dd>
+</dl>
+<a class="btn btn-primary" href="@Url.Action("Editar",new{id=Model.Id})">Editar</a>
+@if(SeguridadWeb.Usuario(Context).Puede("COMPRAS_ADMINISTRAR")){<a class="btn btn-outline-primary" href="@Url.Action("Historial",new{id=Model.Id})">Historial de compras</a>}
+<a class="btn btn-outline-secondary" href="@Url.Action("Index")">Volver al listado</a>
